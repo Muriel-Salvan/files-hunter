@@ -67,8 +67,8 @@ module FilesHunter
       File.open(file_name, 'rb') do |file|
         content = IOBlockReader.init(file, :block_size => @block_size)
 
-        log_debug "File size: #{file.size}"
-        segments << Segment.new(0, file.size, :unknown)
+        log_debug "File size: #{File.size(file_name)}"
+        segments << Segment.new(0, File.size(file_name), :unknown)
 
         # Get decoders in a given order
         # This is important as some containers can include segments of other containers
