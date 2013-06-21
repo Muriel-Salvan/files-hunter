@@ -4,7 +4,7 @@ module FilesHunter
 
     class ICO < BeginPatternDecoder
 
-      BEGIN_PATTERN_ICO = /\x00\x00[\x01\x02]\x00.....\x00/
+      BEGIN_PATTERN_ICO = Regexp.new("\x00\x00[\x01\x02]\x00.....\x00", nil, 'n')
 
       def get_begin_pattern
         return BEGIN_PATTERN_ICO, { :offset_inc => 3, :max_regexp_size => 10 }

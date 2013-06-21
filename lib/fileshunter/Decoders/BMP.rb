@@ -4,7 +4,7 @@ module FilesHunter
 
     class BMP < BeginPatternDecoder
 
-      BEGIN_PATTERN_BMP = /BM....\x00\x00\x00\x00/
+      BEGIN_PATTERN_BMP = Regexp.new("BM....\x00\x00\x00\x00", nil, 'n')
 
       def get_begin_pattern
         return BEGIN_PATTERN_BMP, { :offset_inc => 2, :max_regexp_size => 10 }

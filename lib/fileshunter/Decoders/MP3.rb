@@ -4,7 +4,7 @@ module FilesHunter
 
     class MP3 < BeginPatternDecoder
 
-      BEGIN_PATTERN_MP3 = /\xFF[\xE2-\xFF][\x00-\xEF]/
+      BEGIN_PATTERN_MP3 = Regexp.new("\xFF[\xE2-\xFF][\x00-\xEF]", nil, 'n')
       BEGIN_PATTERN_ID3V1 = 'TAG'.force_encoding('ASCII-8BIT')
       BEGIN_PATTERN_ID3V2 = 'ID3'.force_encoding('ASCII-8BIT')
 
