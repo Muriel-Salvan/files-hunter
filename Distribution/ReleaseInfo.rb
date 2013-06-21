@@ -38,7 +38,8 @@ RubyPackager::ReleaseInfo.new.
     :test_file => 'test/run.rb',
     :gem_dependencies => [
       [ 'rUtilAnts', '>= 1.0' ],
-      [ 'ioblockreader', '>= 1.0.3' ]
+      [ 'ioblockreader', '>= 1.0.3' ],
+      [ 'bindata' ]
     ],
     :extensions => [
       'ext/fileshunter/Decoders/extconf.rb'

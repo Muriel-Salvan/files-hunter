@@ -1,5 +1,10 @@
 = Projects used by IO Block Reader
 
+== bindata
+* Dion Mendel (https://github.com/dmendel)
+* https://github.com/dmendel/bindata
+* Used to parse binary data efficiently.
+
 == IOBlockReader
 * Muriel Salvan (http://murielsalvan.users.sourceforge.net)
 * http://ioblockreader.sourceforge.net
