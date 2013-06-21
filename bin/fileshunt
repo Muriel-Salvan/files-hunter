@@ -1,0 +1,203 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'fileshunter'
+require 'fileutils'
+
+module FilesHunter
+
+  class Extractor
+
+    # Constructor
+    def initialize
+      # Default options
+      @extract = false
+      @display_help = false
+      @debug = false
+      @log = false
+      @block_size = 134217728
+      @extract_dir = nil
+      # The command line parser
+      @options = OptionParser.new
+      @options.banner = 'fileshunt [--help] [--debug] [--extract] [--extractdir <DirectoryName>] [--log] [--blocksize <BlockSizeInBytes>] <FileName1> <FileName2> ...'
+      @options.on( '--extract',
+        'Extract found segments as extra files next to the analyzed ones (named from the original file name and __EXTRACT__ suffixes).') do
+        @extract = true
+      end
+      @options.on( '--log',
+        'Log found segments in various log files (named fileshunt*.log).') do
+        @log = true
+      end
+      @options.on( '--extractdir <DirectoryName>', String,
+        '<DirectoryName>: Directory name to extract to.',
+        'Specify the directory where extracted files are written. If none specified, they will be written next to original files.') do |arg|
+        @extract_dir = arg
+      end
+      @options.on( '--blocksize <BlockSizeInBytes>', Integer,
+        '<BlockSizeInBytes>: Size of blocks to read at once from disk. Default = 134217728.',
+        'Specify the block size when reading from files') do |arg|
+        @block_size = arg
+      end
+      @options.on( '--help',
+        'Display help') do
+        @display_help = true
+      end
+      @options.on( '--debug',
+        'Activate debug logs') do
+        @debug = true
+      end
+    end
+
+    # Executes the extractor
+    #
+    # Parameters::
+    # * *args* (<em>list<String></em>): Arguments given to the extractor
+    def execute(args)
+      # Analyze arguments
+      remaining_args = @options.parse(args)
+
+      if @display_help
+        puts @options
+      else
+        activate_log_debug(true) if @debug
+        if @log
+          # Clean log files
+          File.unlink(EXTRACTOR_LOG) if (File.exist?(EXTRACTOR_LOG))
+          File.unlink(EXTRACTOR_1_LOG) if (File.exist?(EXTRACTOR_1_LOG))
+          File.unlink(EXTRACTOR_2_20_LOG) if (File.exist?(EXTRACTOR_2_20_LOG))
+          File.unlink(EXTRACTOR_20_LOG) if (File.exist?(EXTRACTOR_20_LOG))
+        end
+
+        # Compute the list of files
+        files = []
+        if (remaining_args.empty?)
+          # Put current directory
+          files = Dir.glob("#{Dir.getwd}/**/*")
+        else
+          remaining_args.each do |file_name|
+            if (File.exists?(file_name))
+              if (File.directory?(file_name))
+                files.concat(Dir.glob("#{file_name}/**/*"))
+              else
+                files << file_name
+              end
+            else
+              # Might have wildcards in it
+              lst_files = Dir.glob(file_name)
+              if (lst_files.empty?)
+                puts "WARNING: Unable to find file: #{file_name}"
+              else
+                files.concat(lst_files)
+              end
+            end
+          end
+        end
+        # Remove already extracted files from the list
+        files.select! { |file_name| ((file_name =~ /\.__EXTRACT__\./) == nil) }
+
+        # Analyze them
+        analyze_files(files)
+      end
+    end
+
+    private
+
+    EXTRACTOR_LOG = 'fileshunt.log'
+    EXTRACTOR_1_LOG = 'fileshunt_1_segment.log'
+    EXTRACTOR_2_20_LOG = 'fileshunt_2-20_segments.log'
+    EXTRACTOR_20_LOG = 'fileshunt_20_segments.log'
+
+    # Analyze a list of files
+    #
+    # Parameters::
+    # * *files* (<em>list<String></em>): List of file names to analyze
+    def analyze_files(files)
+      nbr_files = files.size
+      if (nbr_files == 0)
+        log_info 'No file found to be analyzed.'
+      else
+        segments_analyzer = FilesHunter::get_segments_analyzer(:block_Size => @block_size)
+        start_time = Time.now
+        files.each_with_index do |file_name, idx|
+          log_debug "Handle file #{file_name}"
+          # List of segments identified in this file
+          segments = segments_analyzer.get_segments(file_name)
+
+          log_info "[#{file_name}] - Found #{segments.size} segments: #{segments.map { |segment| "#{segment.extension.to_s}#{segment.truncated ? ' (truncated)' : ''}" }}"
+
+          if @log
+            log_files = [EXTRACTOR_LOG]
+            if (segments.size == 1)
+              log_files << EXTRACTOR_1_LOG
+            elsif (segments.size <= 20)
+              log_files << EXTRACTOR_2_20_LOG
+            else
+              log_files << EXTRACTOR_20_LOG
+            end
+            log_files.each do |log_file|
+              File.open(log_file, 'a') do |file|
+                file.puts "[#{file_name}] - Found #{segments.size} segments: #{segments.map { |segment| "#{segment.extension.to_s}#{segment.truncated ? ' (truncated)' : ''}" }}"
+              end
+            end
+          end
+
+          # Write them on disk
+          if (@extract and
+              (segments.size > 1))
+            File.open(file_name, 'rb') do |file|
+              content = IOBlockReader.init(file, :block_size => 128*1048576)
+              segments.each_with_index do |segment, segment_idx|
+                write_segment(content, segment_idx, segment, file_name)
+              end
+            end
+          end
+
+          elapsed_time = Time.now-start_time
+          total_time = (elapsed_time*nbr_files)/(idx+1)
+          $stdout.write "[#{((idx*100)/nbr_files).to_i}%] - [ #{print_time(total_time-elapsed_time)} / #{print_time(total_time)} ] - #{file_name}     \r"
+        end
+      end
+    end
+
+    # Write a segment to disk
+    #
+    # Parameters::
+    # * *data* (_IOBlockReader_): The data containing the segment to be written
+    # * *index* (_Fixnum_): Index of the segment
+    # * *segment* (_Segment_): Segment to be written
+    # * *file_name* (_String_): File name containing the original data
+    def write_segment(data, index, segment, file_name)
+      file_name_suffix = ".__EXTRACT__.#{sprintf('%.4d', index)}.#{segment.truncated ? 'truncated.' : ''}#{segment.extension.to_s}"
+      extracted_file_name = nil
+      if (@extract_dir == nil)
+        extracted_file_name = "#{file_name}#{file_name_suffix}"
+      else
+        extracted_file_name = "#{@extract_dir}/#{file_name}#{file_name_suffix}"
+        FileUtils::mkdir_p(File.dirname(extracted_file_name))
+      end
+      log_info "Write extracted segment in #{extracted_file_name}"
+      File.open(extracted_file_name, 'wb') do |file|
+        data.each_block(segment.begin_offset..segment.end_offset-1) do |block_data|
+          file.write(block_data)
+        end
+      end
+    end
+
+    # Get a number of seconds in a nice way
+    #
+    # Parameters::
+    # * *nbr_secs* (_Fixnum_): Number of seconds
+    # Result::
+    # * _String_: Formatted way
+    def print_time(nbr_secs)
+      secs  = nbr_secs.to_i
+      mins  = secs / 60
+      hours = mins / 60
+      return "#{hours}:#{sprintf('%.2d',mins % 60)}:#{sprintf('%.2d',secs % 60)}"
+    end
+
+  end
+
+end
+
+FilesHunter::Extractor.new.execute(ARGV)
