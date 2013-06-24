@@ -4,6 +4,8 @@
 Gem::Specification.new do |s|
   s.name        = 'fileshunter'
   s.version     = '0.0.1'
+  s.summary     = ''
+  s.authors     = ''
   s.add_dependency('rUtilAnts', '>= 1.0')
   s.add_dependency('ioblockreader', '>= 1.0.3')
   s.add_dependency('bindata')

@@ -4,6 +4,11 @@ module FilesHunter
 
     class Text
 
+      UTF_16BE_BOM = "\xFE\xFF".force_encoding(Encoding::ASCII_8BIT)
+      UTF_16LE_BOM = "\xFF\xFE".force_encoding(Encoding::ASCII_8BIT)
+      NULL_CHAR = "\x00".force_encoding(Encoding::ASCII_8BIT)
+      NL_CHAR = "\n".force_encoding(Encoding::ASCII_8BIT)
+
       # Find segments from a given data
       #
       # Parameters:
@@ -18,7 +23,7 @@ module FilesHunter
         current_offset = begin_offset
         while (current_offset < end_offset)
           # First find a new line character from current_offset
-          newline_offset = data.index("\n", current_offset)
+          newline_offset = data.index(NL_CHAR, current_offset)
           if ((newline_offset == nil) or
               (newline_offset >= end_offset))
             # No text
@@ -31,13 +36,13 @@ module FilesHunter
             text_header_size = 0
             # Detect if it might be UTF-16 encoded
             if (((newline_offset > begin_offset) and
-                 (data[newline_offset-1] == "\x00")) or
+                 (data[newline_offset-1] == NULL_CHAR)) or
                 ((newline_offset < end_offset-1) and
-                 (data[newline_offset+1] == "\x00")))
+                 (data[newline_offset+1] == NULL_CHAR)))
               # Cursor should always be on a \x00 unless it arrived at the end
               cursor = newline_offset - 1
               while ((cursor >= begin_offset+1) and
-                     (data[cursor] == "\x00") and
+                     (data[cursor] == NULL_CHAR) and
                      ((((c = data[cursor-1].ord) >= 32) and
                        (c != 127)) or
                       (c == 9) or
@@ -68,12 +73,12 @@ module FilesHunter
                   # data[begin_offset..begin_offset+2] == \x00\xAA\x00
                   text_begin_offset = begin_offset
                   encoding = Encoding::UTF_16BE
-                elsif ((((c = data[begin_offset].ord) >= 32) and
-                     (c != 127)) or
-                    (c == 9) or
-                    (c == 13))
+                elsif (((c >= 32) and
+                        (c != 127)) or
+                       (c == 9) or
+                       (c == 13))
                   # data[begin_offset..begin_offset+2] == \xAA\xAA\x00
-                  if (data[begin_offset..begin_offset+1] == "\xFE\xFF")
+                  if (data[begin_offset..begin_offset+1] == UTF_16BE_BOM)
                     # data[begin_offset..begin_offset+2] == \xFE\xFF\x00
                     text_begin_offset = begin_offset
                     encoding = Encoding::UTF_16BE
@@ -87,16 +92,16 @@ module FilesHunter
                   text_begin_offset = begin_offset + 1
                   encoding = Encoding::UTF_16LE
                 end
-              elsif (data[cursor] == "\x00")
+              elsif (data[cursor] == NULL_CHAR)
                 # data[cursor-1..cursor+2] == \xBB\x00\xAA\x00
                 text_begin_offset = cursor
                 encoding = Encoding::UTF_16BE
-              elsif (data[cursor-1..cursor] == "\xFF\xFE")
+              elsif (data[cursor-1..cursor] == UTF_16LE_BOM)
                 # data[cursor-1..cursor+2] == \xFF\xFE\xAA\x00
                 text_begin_offset = cursor - 1
                 encoding = Encoding::UTF_16LE
                 text_header_size = 2
-              elsif (data[cursor..cursor+1] == "\xFE\xFF")
+              elsif (data[cursor..cursor+1] == UTF_16BE_BOM)
                 # data[cursor-1..cursor+2] == \x??\xFE\xFF\x00
                 text_begin_offset = cursor
                 encoding = Encoding::UTF_16BE
@@ -137,7 +142,7 @@ module FilesHunter
               # cursor points on \x00
               cursor = newline_offset + 1
               while ((cursor < end_offset-1) and
-                     (data[cursor] == "\x00") and
+                     (data[cursor] == NULL_CHAR) and
                      ((((c = data[cursor+1].ord) >= 32) and
                        (c != 127)) or
                       (c == 9) or
@@ -150,7 +155,7 @@ module FilesHunter
               # * else cursor is at end_offset-1, meaning the string ends at end_offset-1 or at end_offset and is truncated if data[end_offset-1] is "\x00",
               # * else the string ends at cursor
               if (cursor == end_offset-1)
-                if (data[cursor] == "\x00")
+                if (data[cursor] == NULL_CHAR)
                   truncated = true
                   text_end_offset = end_offset
                 else
@@ -163,7 +168,7 @@ module FilesHunter
               # cursor points on the ASCII value
               cursor = newline_offset
               while ((cursor < end_offset-1) and
-                     (data[cursor+1] == "\x00") and
+                     (data[cursor+1] == NULL_CHAR) and
                      ((((c = data[cursor].ord) >= 32) and
                        (c != 127)) or
                       (c == 9) or

@@ -7,29 +7,38 @@ module FilesHunter
       BEGIN_PATTERN_EXE = Regexp.new("MZ....\x00\x00.\x00.\x00..\x00\x00.\x00\x00\x00\x00\x00\x00\x00.\x00.\x00\x00\x00....\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00....\x00\x00\x00\x00\x00\x00\x00\x00", nil, 'n')
 
       KNOWN_MACHINE_TYPES = [
-        "\x00\x00",
-        "\xd3\x01",
-        "\x64\x86",
-        "\xc0\x01",
-        "\xc4\x01",
-        "\x64\xaa",
-        "\xbc\x0e",
-        "\x4c\x01",
-        "\x00\x02",
-        "\x41\x90",
-        "\x66\x02",
-        "\x66\x03",
-        "\x66\x04",
-        "\xf0\x01",
-        "\xf1\x01",
-        "\x66\x01",
-        "\xa2\x01",
-        "\xa3\x01",
-        "\xa6\x01",
-        "\xa8\x01",
-        "\xc2\x01",
-        "\x69\x01"
+        "\x00\x00".force_encoding(Encoding::ASCII_8BIT),
+        "\xd3\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\x64\x86".force_encoding(Encoding::ASCII_8BIT),
+        "\xc0\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\xc4\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\x64\xaa".force_encoding(Encoding::ASCII_8BIT),
+        "\xbc\x0e".force_encoding(Encoding::ASCII_8BIT),
+        "\x4c\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\x00\x02".force_encoding(Encoding::ASCII_8BIT),
+        "\x41\x90".force_encoding(Encoding::ASCII_8BIT),
+        "\x66\x02".force_encoding(Encoding::ASCII_8BIT),
+        "\x66\x03".force_encoding(Encoding::ASCII_8BIT),
+        "\x66\x04".force_encoding(Encoding::ASCII_8BIT),
+        "\xf0\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\xf1\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\x66\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\xa2\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\xa3\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\xa6\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\xa8\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\xc2\x01".force_encoding(Encoding::ASCII_8BIT),
+        "\x69\x01".force_encoding(Encoding::ASCII_8BIT)
       ]
+
+      PE_SIGNATURE = "PE\x00\x00".force_encoding(Encoding::ASCII_8BIT)
+      OPTIONAL_HEADER_ID = "\x0B".force_encoding(Encoding::ASCII_8BIT)
+      PE32_ID = "\x01".force_encoding(Encoding::ASCII_8BIT)
+      KNOWN_OPTIONAL_HEADER_TYPES = [
+        PE32_ID,
+        "\x02".force_encoding(Encoding::ASCII_8BIT)
+      ]
+      SECTION_TEXT_ID = ".text\x00\x00\x00".force_encoding(Encoding::ASCII_8BIT)
 
       def get_begin_pattern
         return BEGIN_PATTERN_EXE, { :offset_inc => 60, :max_regexp_size => 60 }
@@ -42,7 +51,7 @@ module FilesHunter
         cursor = offset + BinData::Uint32le.read(@data[offset+60..offset+63])
         progress(cursor)
         # Decode PE file header
-        invalid_data("@#{cursor} - Invalid PE header") if (@data[cursor..cursor+3] != "PE\x00\x00")
+        invalid_data("@#{cursor} - Invalid PE header") if (@data[cursor..cursor+3] != PE_SIGNATURE)
         cursor += 4
         target_machine = @data[cursor..cursor+1]
         invalid_data("@#{cursor} - Invalid machine type: #{target_machine}") if (!KNOWN_MACHINE_TYPES.include?(target_machine))
@@ -67,8 +76,8 @@ module FilesHunter
         optional_header_end_offset = cursor + optional_header_size
         if (optional_header_size > 0)
           c_1 = @data[cursor+1]
-          invalid_data("@#{cursor} - Invalid optional header") if ((@data[cursor] != "\x0B") or ((c_1 != "\x01") and (c_1 != "\x02")))
-          mode_pe32 = (c_1 == "\x01")
+          invalid_data("@#{cursor} - Invalid optional header") if ((@data[cursor] != OPTIONAL_HEADER_ID) or (!KNOWN_OPTIONAL_HEADER_TYPES.include?(c_1)))
+          mode_pe32 = (c_1 == PE32_ID)
           #linker_version_major = @data[cursor+2].ord
           #linker_version_minor = @data[cursor+3].ord
           #code_size = BinData::Uint32le.read(@data[cursor+4..cursor+7])
@@ -158,7 +167,7 @@ module FilesHunter
           #invalid_data("@#{cursor+70} - Invalid Section characteristics #{section_characteristics}: bits should be 0") if ((section_characteristics & 18) != 0)
           log_debug "@#{cursor} - Found section #{name}: raw_data_offset=#{raw_data_offset} raw_data_size=#{raw_data_size}"
           # Remember the .text section
-          text_section_offset = raw_data_offset if (name == ".text\x00\x00\x00")
+          text_section_offset = raw_data_offset if (name == SECTION_TEXT_ID)
           cursor += 40
           progress(cursor)
           sections[raw_data_offset] = raw_data_size if (raw_data_size > 0)
