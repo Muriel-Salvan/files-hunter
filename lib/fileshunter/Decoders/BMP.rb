@@ -72,7 +72,7 @@ module FilesHunter
             (compression == 3))
           # Compute the scanline size
           scanline_size = nil
-          case bpp
+          case bpp.to_i
           when 1, 4, 8
             scanline_size, extra = width.divmod(8/bpp)
             scanline_size += 1 if (extra > 0)
