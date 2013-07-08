@@ -131,8 +131,9 @@ module FilesHunter
                 decoded_end_offset = nil
               end
             rescue
-              log_err "Error while decoding data: #{$!}\n#{$!.backtrace.join("\n")}"
-              decoded_end_offset = nil
+              #log_err "Error while decoding data: #{$!}\n#{$!.backtrace.join("\n")}"
+              #decoded_end_offset = nil
+              raise
             end
             log_debug "Decoded segment in offsets [ #{begin_pattern_offset} - #{decoded_end_offset} ]" if (decoded_end_offset != nil)
             if (decoded_end_offset == nil)

@@ -183,11 +183,11 @@ module FilesHunter
           else
             last_written_offset = segment.begin_offset
             decoded_segments.each do |decoded_segment|
-              splitted_segments << Segment.new(last_written_offset, decoded_segment.begin_offset, :unknown) if (decoded_segment.begin_offset > last_written_offset)
+              splitted_segments << Segment.new(last_written_offset, decoded_segment.begin_offset, :unknown, false, {}) if (decoded_segment.begin_offset > last_written_offset)
               splitted_segments << decoded_segment
               last_written_offset = decoded_segment.end_offset
             end
-            splitted_segments << Segment.new(last_written_offset, segment.end_offset, :unknown) if (segment.end_offset > last_written_offset)
+            splitted_segments << Segment.new(last_written_offset, segment.end_offset, :unknown, false, {}) if (segment.end_offset > last_written_offset)
           end
         else
           splitted_segments << segment
@@ -205,7 +205,7 @@ module FilesHunter
             result_segments << splitted_segments[iIdx-1]
           elsif (nbr_consecutive_unknown > 1)
             # Several consecutive segments encountered: merge them
-            result_segments << Segment.new(splitted_segments[iIdx-nbr_consecutive_unknown].begin_offset, splitted_segments[iIdx-1].end_offset, :unknown)
+            result_segments << Segment.new(splitted_segments[iIdx-nbr_consecutive_unknown].begin_offset, splitted_segments[iIdx-1].end_offset, :unknown, false, {})
           end
           result_segments << segment
           nbr_consecutive_unknown = 0
@@ -216,7 +216,7 @@ module FilesHunter
         result_segments << splitted_segments[-1]
       elsif (nbr_consecutive_unknown > 1)
         # Several consecutive segments encountered
-        result_segments << Segment.new(splitted_segments[-nbr_consecutive_unknown].begin_offset, splitted_segments[-1].end_offset, :unknown)
+        result_segments << Segment.new(splitted_segments[-nbr_consecutive_unknown].begin_offset, splitted_segments[-1].end_offset, :unknown, false, {})
       end
 
       return result_segments

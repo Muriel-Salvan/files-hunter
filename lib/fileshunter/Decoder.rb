@@ -57,7 +57,7 @@ module FilesHunter
     # Indicate progression in the decoding
     # This is used to eventually cancel the parsing
     def keep_alive
-      raise CancelParsingError.new("Parsing cancelled while decoding @#{offset_to_be_decoded}") if (@segments_analyzer.parsing_cancelled)
+      raise CancelParsingError.new('Parsing cancelled while decoding') if (@segments_analyzer.parsing_cancelled)
     end
 
   end
