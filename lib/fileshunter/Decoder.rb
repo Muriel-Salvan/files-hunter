@@ -7,7 +7,7 @@ module FilesHunter
   # * *@begin_offset* (_Fixnum_): The begin offset
   # * *@end_offset* (_Fixnum_): The end offset
   # * *found_segment*: Method used to indicate a Segment was successfully parsed
-  # * *progress*: Method used to indicate progression among the data offsets
+  # * *keep_alive*: Method used to indicate progression
   class Decoder
 
     # Prepare for new search
@@ -23,7 +23,6 @@ module FilesHunter
       @begin_offset = begin_offset
       @end_offset = end_offset
       @segments = []
-      @last_offset_to_be_decoded = @begin_offset
     end
 
     # Return found segments since last setup
@@ -48,20 +47,17 @@ module FilesHunter
       raise "Segment begin offset (#{segment_begin_offset}) is lower than data begin offset (#{@begin_offset})" if (segment_begin_offset < @begin_offset)
       if (segment_end_offset > @end_offset)
         log_debug "Segment end offset (#{segment_end_offset}) is greater than data end offset (#{@end_offset}). Mark Segment as truncated."
-        @segments << Segment.new(segment_begin_offset, @end_offset, extension, true, metadata)
-      else
-        @segments << Segment.new(segment_begin_offset, segment_end_offset, extension, truncated, metadata)
+        segment_end_offset = @end_offset
+        truncated = true
       end
+      @segments << Segment.new(segment_begin_offset, segment_end_offset, extension, truncated, metadata)
+      @segments_analyzer.add_bytes_decoded(segment_end_offset - segment_begin_offset)
     end
 
     # Indicate progression in the decoding
-    #
-    # Parameters::
-    # * *offset_to_be_decoded* (_Fixnum_): Next to be decoded
-    def progress(offset_to_be_decoded)
-      @last_offset_to_be_decoded = offset_to_be_decoded
+    # This is used to eventually cancel the parsing
+    def keep_alive
       raise CancelParsingError.new("Parsing cancelled while decoding @#{offset_to_be_decoded}") if (@segments_analyzer.parsing_cancelled)
-      raise AccessAfterDataError.new("Progression @#{offset_to_be_decoded} is over limit (#{@end_offset})") if (@last_offset_to_be_decoded > @end_offset)
     end
 
   end

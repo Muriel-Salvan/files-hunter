@@ -56,6 +56,16 @@ module FilesHunter
       raise TruncatedDataError.new(message)
     end
 
+    # Indicate progression in the decoding
+    #
+    # Parameters::
+    # * *offset_to_be_decoded* (_Fixnum_): Next to be decoded
+    def progress(offset_to_be_decoded)
+      @last_offset_to_be_decoded = offset_to_be_decoded
+      raise TruncatedDataError.new("Progression @#{offset_to_be_decoded} is over limit (#{@end_offset})") if (@last_offset_to_be_decoded > @end_offset)
+      keep_alive
+    end
+
     private
 
     # Find a starting pattern and call a client block when it matches.

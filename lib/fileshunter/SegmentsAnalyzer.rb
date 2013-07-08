@@ -63,7 +63,10 @@ module FilesHunter
       @block_size = (options[:block_size] || 134217728)
       @plugins = RUtilAnts::Plugins::PluginsManager.new
       @plugins.parse_plugins_from_dir(:Decoders, "#{File.dirname(__FILE__)}/Decoders", 'FilesHunter::Decoders')
-      @parsing_cancelled = false # This variable may be set to true in a multithreaded environment
+      # Following are variables that may be accessed in a multithreaded environment
+      @parsing_cancelled = false
+      @nbr_bytes = nil
+      @nbr_bytes_decoded = nil
     end
 
     # Get segments by analyzing a given file
@@ -78,8 +81,10 @@ module FilesHunter
       File.open(file_name, 'rb') do |file|
         content = IOBlockReader.init(file, :block_size => @block_size)
 
-        log_debug "File size: #{File.size(file_name)}"
-        segments << Segment.new(0, File.size(file_name), :unknown, false, {})
+        @nbr_bytes = File.size(file_name)
+        @nbr_bytes_decoded = 0
+        log_debug "File size: #{@nbr_bytes}"
+        segments << Segment.new(0, @nbr_bytes, :unknown, false, {})
 
         begin
           # Get decoders in a given order
@@ -127,6 +132,24 @@ module FilesHunter
     # This method has to be called from a different thread than the one who is currently calling get_segments.
     def cancel_parsing
       @parsing_cancelled = true
+    end
+
+    # Add some bytes as being decoded
+    #
+    # Parameters::
+    # * *nbr_bytes* (_Fixnum_): Number of bytes just being decoded
+    def add_bytes_decoded(nbr_bytes)
+      @nbr_bytes_decoded = nbr_bytes
+      #puts "Progression: #{@nbr_bytes_decoded} / #{@nbr_bytes}"
+    end
+
+    # Get the current progression
+    #
+    # Result::
+    # * _Fixnum_: Total number of bytes
+    # * _Fixnum_: Total number of bytes decoded
+    def progression
+      return @nbr_bytes, @nbr_bytes_decoded
     end
 
     private

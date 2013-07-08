@@ -115,6 +115,7 @@ module FilesHunter
               text_begin_offset = cursor + 1
             end
             # Now find forward
+            keep_alive
             text_end_offset = nil
             truncated = false
             case encoding
