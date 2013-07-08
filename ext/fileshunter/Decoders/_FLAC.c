@@ -220,7 +220,8 @@ static VALUE flac_decode_rice(
 void Init__FLAC() {
   VALUE rb_mFilesHunter = rb_define_module("FilesHunter");
   VALUE rb_mDecoders = rb_define_module_under(rb_mFilesHunter, "Decoders");
-  VALUE rb_cBeginPatternDecoder = rb_define_class_under(rb_mFilesHunter, "BeginPatternDecoder", rb_cObject);
+  VALUE rb_cDecoder = rb_define_class_under(rb_mFilesHunter, "Decoder", rb_cObject);
+  VALUE rb_cBeginPatternDecoder = rb_define_class_under(rb_mFilesHunter, "BeginPatternDecoder", rb_cDecoder);
   VALUE rb_cFLAC = rb_define_class_under(rb_mDecoders, "FLAC", rb_cBeginPatternDecoder);
   rb_define_method(rb_cFLAC, "decode_rice", flac_decode_rice, 4);
 }

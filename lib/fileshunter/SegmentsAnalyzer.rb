@@ -1,16 +1,16 @@
 require 'bindata'
 require 'ioblockreader'
 require 'rUtilAnts/Plugins'
-RUtilAnts::Plugins::install_plugins_on_object
 require 'fileshunter/Segment'
+require 'fileshunter/Decoder'
 require 'fileshunter/BeginPatternDecoder'
 
 module IOBlockReader
 
-  # Extend class IOBlockReader to raise TruncatedDataError exceptions when accessing off limits
+  # Extend class IOBlockReader to raise exceptions when accessing off limits
   class IOBlockReader
 
-    # Set limits that will trigger TruncatedDataError exceptions
+    # Set limits that will trigger exceptions
     def set_limits(begin_offset, end_offset)
       @begin_offset = begin_offset
       @end_offset = end_offset
@@ -19,13 +19,13 @@ module IOBlockReader
     alias_method :old_squares, :[]
     def [](range)
       if (range.is_a?(Range))
-        raise FilesHunter::TruncatedDataError.new("Index out of range: #{range}") if ((range.first < @begin_offset) or (range.last >= @end_offset))
+        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range}") if (range.last >= @end_offset)
+        raise FilesHunter::AccessBeforeDataError.new("Index out of range: #{range}") if (range.first < @begin_offset)
         result = self.old_squares(range)
-        raise FilesHunter::TruncatedDataError.new("Index out of range: #{range}") if ((result == nil) or (result.size != range.last - range.first + 1))
       else
-        raise FilesHunter::TruncatedDataError.new("Index out of range: #{range}") if ((range < @begin_offset) or (range >= @end_offset))
+        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range}") if (range >= @end_offset)
+        raise FilesHunter::AccessBeforeDataError.new("Index out of range: #{range}") if (range < @begin_offset)
         result = self.old_squares(range)
-        raise FilesHunter::TruncatedDataError.new("Index out of range: #{range}") if (result == nil)
       end
       return result
     end
@@ -36,10 +36,16 @@ end
 
 module FilesHunter
 
-  class TruncatedDataError < RuntimeError
+  class AccessDataError < RuntimeError
   end
 
-  class InvalidDataError < RuntimeError
+  class AccessAfterDataError < AccessDataError
+  end
+
+  class AccessBeforeDataError < AccessDataError
+  end
+
+  class CancelParsingError < RuntimeError
   end
 
   class SegmentsAnalyzer
@@ -51,8 +57,8 @@ module FilesHunter
     #   * *:block_size* (_Fixnum_): Block size in bytes to read from the file at once [default = 134217728]
     def initialize(options = {})
       @block_size = (options[:block_size] || 134217728)
-
-      parse_plugins_from_dir(:Decoders, "#{File.dirname(__FILE__)}/Decoders", 'FilesHunter::Decoders')
+      @plugins = RUtilAnts::Plugins::PluginsManager.new
+      @plugins.parse_plugins_from_dir(:Decoders, "#{File.dirname(__FILE__)}/Decoders", 'FilesHunter::Decoders')
     end
 
     # Get segments by analyzing a given file
@@ -68,34 +74,44 @@ module FilesHunter
         content = IOBlockReader.init(file, :block_size => @block_size)
 
         log_debug "File size: #{File.size(file_name)}"
-        segments << Segment.new(0, File.size(file_name), :unknown)
+        segments << Segment.new(0, File.size(file_name), :unknown, false, {})
 
-        # Get decoders in a given order
-        # This is important as some containers can include segments of other containers
-        [
-          'CFBF', # includes Thumbs.db, DOC, XLS, PPT
-          'ASF', # includes WMV
-          'EXE', # includes DLL, EXE, OCX, OBJ. Cannot detect data concatenated after some EXE files. Detects DRV and SYS as EXE/DLL.
-          'MPG_Video', # not generic enough
-          'EBML', # includes MKV, WEBM
-          'MP4', # include 3GP, MOV, M4A and many others
-          'OGG',
-          'RIFF', # includes AVI, WAV
-          'FLAC',
-          'BMP',
-          'ICO', # includes ICO, CUR
-          'Text', # includes TXT, SRT, RTF (both ASCII-8BIT and UTF-16)
-          'JPEG',
-          'MP3'
-        ].each do |decoder_name|
-          access_plugin(:Decoders, decoder_name) do |decoder|
-            log_debug "[#{file_name}] - Try #{decoder_name}"
-            segments = foreach_unknown_segment(segments) do |begin_offset, end_offset|
-              log_debug "[#{file_name}] - Try #{decoder_name} for segment [#{begin_offset}, #{end_offset}]"
-              content.set_limits(begin_offset, end_offset)
-              next decoder.find_segments(content, begin_offset, end_offset)
+        begin
+          # Get decoders in a given order
+          # This is important as some containers can include segments of other containers
+          [
+            'CFBF', # includes Thumbs.db, DOC, XLS, PPT
+            'ASF', # includes WMV
+            'EXE', # includes DLL, EXE, OCX, OBJ. Cannot detect data concatenated after some EXE files. Detects DRV and SYS as EXE/DLL.
+            'MPG_Video', # not generic enough
+            'EBML', # includes MKV, WEBM
+            'MP4', # include 3GP, MOV, M4A and many others
+            'OGG',
+            'RIFF', # includes AVI, WAV
+            'FLAC',
+            'BMP',
+            'ICO', # includes ICO, CUR
+            'Text', # includes TXT, SRT, RTF (both ASCII-8BIT and UTF-16)
+            'JPEG',
+            'MP3'
+          ].each do |decoder_name|
+            @plugins.access_plugin(:Decoders, decoder_name) do |decoder|
+              log_debug "[#{file_name}] - Try #{decoder_name}"
+              segments = foreach_unknown_segment(segments) do |begin_offset, end_offset|
+                log_debug "[#{file_name}] - Try #{decoder_name} for segment [#{begin_offset}, #{end_offset}]"
+                content.set_limits(begin_offset, end_offset)
+                decoder.setup(content, begin_offset, end_offset)
+                begin
+                  decoder.find_segments
+                rescue AccessDataError
+                  log_err "Decoder #{decoder_name} exceeded data ranges: #{$!}.\n#{$!.backtrace.join("\n")}"
+                end
+                next decoder.segments_found
+              end
             end
           end
+        rescue CancelParsingError
+          log_info "[#{file_name}] - Parsing cancelled"
         end
       end
 
@@ -124,10 +140,10 @@ module FilesHunter
       # Split segments that can be decoded
       splitted_segments = []
       lst_segments.each do |segment|
-        if (segment.extension == :unknown)
+        if (segment.extensions == [:unknown])
           log_debug "Try to find segments in #{segment.begin_offset}..#{segment.end_offset}"
           decoded_segments = yield(segment.begin_offset, segment.end_offset)
-          log_debug "Decoded #{decoded_segments.size} new segments: #{decoded_segments.map { |decoded_segment| "[#{decoded_segment.extension.to_s}#{decoded_segment.truncated ? '(truncated)' : ''}:#{decoded_segment.begin_offset}..#{decoded_segment.end_offset}]" }}"
+          log_debug "Decoded #{decoded_segments.size} new segments: #{decoded_segments.map { |decoded_segment| "[#{decoded_segment.extensions.join(',')}#{decoded_segment.truncated ? '(truncated)' : ''}:#{decoded_segment.begin_offset}..#{decoded_segment.end_offset}]" }}"
           if (decoded_segments.empty?)
             splitted_segments << segment
           else
@@ -147,7 +163,7 @@ module FilesHunter
       # Merge consecutives :unknown segments
       nbr_consecutive_unknown = 0
       splitted_segments.each_with_index do |segment, iIdx|
-        if (segment.extension == :unknown)
+        if (segment.extensions == [:unknown])
           nbr_consecutive_unknown += 1
         else
           if (nbr_consecutive_unknown == 1)

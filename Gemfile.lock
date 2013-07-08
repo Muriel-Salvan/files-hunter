@@ -1,0 +1,22 @@
+PATH
+  remote: .
+  specs:
+    fileshunter (0.0.1)
+      bindata
+      ioblockreader (>= 1.0.3)
+      rUtilAnts (>= 1.0)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    bindata (1.5.0)
+    ioblockreader (1.0.3.20130618)
+    rUtilAnts (1.0.1.20130320)
+    rake (10.1.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  fileshunter!
+  rake

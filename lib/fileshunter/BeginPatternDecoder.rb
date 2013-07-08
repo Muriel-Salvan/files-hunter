@@ -1,19 +1,15 @@
 module FilesHunter
 
-  class BeginPatternDecoder
+  class BeginPatternDecoder < Decoder
+
+    class TruncatedDataError < RuntimeError
+    end
+
+    class InvalidDataError < RuntimeError
+    end
 
     # Find segments from a given data
-    #
-    # Parameters:
-    # * *data* (_IOBlockReader_): Data being analyzed
-    # * *begin_offset* (_Fixnum_): The begin offset
-    # * *end_offset* (_Fixnum_): The end offset
-    # Return::
-    # * <em>list<Segment></em>: List of decoded segments
-    def find_segments(data, begin_offset, end_offset)
-      @data = data
-      @begin_offset = begin_offset
-      @end_offset = end_offset
+    def find_segments
       @begin_pattern, options = get_begin_pattern
       @has_to_check_begin_pattern = self.respond_to?(:check_begin_pattern)
       # Parse options
@@ -25,11 +21,12 @@ module FilesHunter
         @offset_inc = options[:offset_inc] if (options[:offset_inc] != nil)
         @begin_pattern_offset_in_segment = options[:begin_pattern_offset_in_segment] if (options[:begin_pattern_offset_in_segment] != nil)
       end
-
-      return foreach_begin_pattern do |begin_pattern_offset|
+      foreach_begin_pattern do |begin_pattern_offset|
         next decode(begin_pattern_offset)
       end
     end
+
+    protected
 
     # Mark the current decoding as being valid.
     # This is called when the decoder knows that it has valid data matching its specification.
@@ -59,15 +56,6 @@ module FilesHunter
       raise TruncatedDataError.new(message)
     end
 
-    # Indicate progression in the decoding
-    #
-    # Parameters::
-    # * *offset_to_be_decoded* (_Fixnum_): Next to be decoded
-    def progress(offset_to_be_decoded)
-      @last_offset_to_be_decoded = offset_to_be_decoded
-      raise TruncatedDataError.new("Progression @#{offset_to_be_decoded} is over limit (#{@end_offset})") if (@last_offset_to_be_decoded > @end_offset)
-    end
-
     private
 
     # Find a starting pattern and call a client block when it matches.
@@ -84,11 +72,7 @@ module FilesHunter
     #   * *pattern_index* (_Fixnum_): The pattern index that matched the search. Always nil if begin_pattern is not a list.
     #   * Result::
     #   * *end_offset* (_Fixnum_): The ending offset (nil if could not be decoded). If the ending offset returned is greater than end_offset, segment will be considered as truncated.
-    # Result::
-    # * <em>list<Segment></em>: The list of decoded segments
     def foreach_begin_pattern
-      segments = []
-
       # Loop to the end
       current_offset = @begin_offset
       while (current_offset < @end_offset)
@@ -126,7 +110,7 @@ module FilesHunter
               else
                 decoded_end_offset = nil
               end
-            rescue TruncatedDataError
+            rescue TruncatedDataError, AccessAfterDataError
               # Data is truncated
               log_debug "Got a truncation exception while decoding data: #{$!}"
               # If we already got relevant data, mark it as truncated
@@ -152,7 +136,7 @@ module FilesHunter
                 truncated = true
               end
               # Extract the segment and go on to the next
-              segments << Segment.new(begin_pattern_offset, decoded_end_offset, @extension, truncated)
+              found_segment(begin_pattern_offset, decoded_end_offset, @extension, truncated, {})
               current_offset = decoded_end_offset
             end
           else
@@ -161,8 +145,6 @@ module FilesHunter
           end
         end
       end
-
-      return segments
     end
 
   end
