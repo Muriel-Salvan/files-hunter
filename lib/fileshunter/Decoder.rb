@@ -12,17 +12,18 @@ module FilesHunter
 
     # Prepare for new search
     #
-    # Parameters:
+    # Parameters::
+    # * *segments_analyzer* (_SegmentsAnalyzer_): The segments analyzer for which this Decoder is working
     # * *data* (_IOBlockReader_): Data being analyzed
     # * *begin_offset* (_Fixnum_): The begin offset
     # * *end_offset* (_Fixnum_): The end offset
-    def setup(data, begin_offset, end_offset)
+    def setup(segments_analyzer, data, begin_offset, end_offset)
+      @segments_analyzer = segments_analyzer
       @data = data
       @begin_offset = begin_offset
       @end_offset = end_offset
       @segments = []
       @last_offset_to_be_decoded = @begin_offset
-      @cancel_parsing = false
     end
 
     # Return found segments since last setup
@@ -59,7 +60,7 @@ module FilesHunter
     # * *offset_to_be_decoded* (_Fixnum_): Next to be decoded
     def progress(offset_to_be_decoded)
       @last_offset_to_be_decoded = offset_to_be_decoded
-      raise CancelParsingError.new("Parsing cancelled while decoding @#{offset_to_be_decoded}") if @cancel_parsing
+      raise CancelParsingError.new("Parsing cancelled while decoding @#{offset_to_be_decoded}") if (@segments_analyzer.parsing_cancelled)
       raise AccessAfterDataError.new("Progression @#{offset_to_be_decoded} is over limit (#{@end_offset})") if (@last_offset_to_be_decoded > @end_offset)
     end
 

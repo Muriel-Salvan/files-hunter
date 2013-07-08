@@ -50,6 +50,10 @@ module FilesHunter
 
   class SegmentsAnalyzer
 
+    # Is the parsing being cancelled?
+    #   Boolean
+    attr_reader :parsing_cancelled
+
     # Constructor
     #
     # Parameters::
@@ -59,6 +63,7 @@ module FilesHunter
       @block_size = (options[:block_size] || 134217728)
       @plugins = RUtilAnts::Plugins::PluginsManager.new
       @plugins.parse_plugins_from_dir(:Decoders, "#{File.dirname(__FILE__)}/Decoders", 'FilesHunter::Decoders')
+      @parsing_cancelled = false # This variable may be set to true in a multithreaded environment
     end
 
     # Get segments by analyzing a given file
@@ -100,7 +105,7 @@ module FilesHunter
               segments = foreach_unknown_segment(segments) do |begin_offset, end_offset|
                 log_debug "[#{file_name}] - Try #{decoder_name} for segment [#{begin_offset}, #{end_offset}]"
                 content.set_limits(begin_offset, end_offset)
-                decoder.setup(content, begin_offset, end_offset)
+                decoder.setup(self, content, begin_offset, end_offset)
                 begin
                   decoder.find_segments
                 rescue AccessDataError
@@ -116,6 +121,12 @@ module FilesHunter
       end
 
       return segments
+    end
+
+    # Cancel the parsing.
+    # This method has to be called from a different thread than the one who is currently calling get_segments.
+    def cancel_parsing
+      @parsing_cancelled = true
     end
 
     private
