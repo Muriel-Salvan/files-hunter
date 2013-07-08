@@ -26,10 +26,7 @@ module FilesHunter
           progress(cursor)
           found_relevant_data(:ogg)
           # Check if a subsequent page is present
-          if ((cursor == @end_offset) or
-              (@data[cursor..cursor+4] != BEGIN_PATTERN_OGG))
-            ending_offset = cursor
-          end
+          ending_offset = cursor if ((cursor == @end_offset) or (@data[cursor..cursor+4] != BEGIN_PATTERN_OGG))
         end
 
         return ending_offset

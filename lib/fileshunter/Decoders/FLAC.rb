@@ -33,6 +33,9 @@ module FilesHunter
         end
         invalid_data("@#{offset} - Missing METADATA_BLOCK_STREAMINFO from headers") if (nbr_bits_per_sample_header == nil)
         found_relevant_data(:flac)
+        metadata(
+          :nbr_bits_per_sample_header => nbr_bits_per_sample_header
+        )
         # Read frames
         while (ending_offset == nil)
           log_debug "@#{cursor} - Reading new frame"

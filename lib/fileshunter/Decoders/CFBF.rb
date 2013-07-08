@@ -60,6 +60,10 @@ module FilesHunter
         # We got the number of sectors
         nbr_sectors = max_sector_id + 1
         log_debug "=== Number of sectors: #{nbr_sectors}"
+        metadata(
+          :msat_size => msat.size,
+          :nbr_sectors => nbr_sectors
+        )
 
         # Now find some info about the file extension
         found_extension = false

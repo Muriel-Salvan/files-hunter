@@ -20,6 +20,7 @@ module FilesHunter
         bpp = nil
         header_version = nil
         bitmap_size = nil
+        compression = 0
         if (header_size == 12)
           # BMP v2 header
           header_version = 2
@@ -67,6 +68,14 @@ module FilesHunter
         end
         progress(cursor)
         found_relevant_data(:bmp)
+        metadata(
+          :width => width,
+          :height => height,
+          :bpp => bpp,
+          :header_version => header_version,
+          :bitmap_size => bitmap_size,
+          :compression => compression
+        )
         log_debug "@#{cursor} - Decoding bitmap data: header_version=#{header_version} width=#{width} height=#{height} bpp=#{bpp} compression=#{compression} bitmap_size=#{bitmap_size}"
         if ((compression == 0) or
             (compression == 3))

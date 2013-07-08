@@ -1,5 +1,16 @@
 module FilesHunter
 
+  # Decoders that are based on begin patterns (sucha as Magic Numbers) inherit from this class.
+  # They then have to implement the following methods:
+  # * *get_begin_pattern*: To give the begin pattern and eventual options
+  # * *decode*: To decode data starting a given offset that matches the begin pattern
+  # * *check_begin_pattern*: Provide a quick check of the begin pattern when found [optional]
+  # They can then use the following DSL in the decode method:
+  # * *found_relevant_data*: Indicate that we are certain the beginning of data of the given extension has been found
+  # * *invalid_data*: Indicate the data read is invalid for our Decoder
+  # * *truncated_data*: Indicate the data should have continued beyond @end_offset if it were to be complete
+  # * *progress*: Indicate the progression of the scan: everything before the progression is considered valid for the given extension (if found_relevant_data was called previously)
+  # * *metadata*: Set metadata properties
   class BeginPatternDecoder < Decoder
 
     class TruncatedDataError < RuntimeError
@@ -21,6 +32,7 @@ module FilesHunter
         @offset_inc = options[:offset_inc] if (options[:offset_inc] != nil)
         @begin_pattern_offset_in_segment = options[:begin_pattern_offset_in_segment] if (options[:begin_pattern_offset_in_segment] != nil)
       end
+      @metadata = {}
       foreach_begin_pattern do |begin_pattern_offset|
         next decode(begin_pattern_offset)
       end
@@ -64,6 +76,14 @@ module FilesHunter
       @last_offset_to_be_decoded = offset_to_be_decoded
       raise TruncatedDataError.new("Progression @#{offset_to_be_decoded} is over limit (#{@end_offset})") if (@last_offset_to_be_decoded > @end_offset)
       keep_alive
+    end
+
+    # Set metadata properties
+    #
+    # Parameters::
+    # * *properties* (<em>map<Symbol,Object></em>): The properties to be set
+    def metadata(properties)
+      @metadata.merge!(properties)
     end
 
     private
@@ -124,7 +144,7 @@ module FilesHunter
               # Data is truncated
               log_debug "Got a truncation exception while decoding data: #{$!}"
               # If we already got relevant data, mark it as truncated
-              if (@extension)
+              if (@extension != nil)
                 truncated = true
                 decoded_end_offset = @end_offset
               else
@@ -147,7 +167,7 @@ module FilesHunter
                 truncated = true
               end
               # Extract the segment and go on to the next
-              found_segment(begin_pattern_offset, decoded_end_offset, @extension, truncated, {})
+              found_segment(begin_pattern_offset, decoded_end_offset, @extension, truncated, @metadata)
               current_offset = decoded_end_offset
             end
           else

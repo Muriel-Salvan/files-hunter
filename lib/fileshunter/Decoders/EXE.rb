@@ -65,6 +65,14 @@ module FilesHunter
         # We can have a first guess on the extension
         extension = ((characteristics & 8192) == 0) ? :exe : ((optional_header_size == 0) ? :obj : :dll)
         found_relevant_data(extension)
+        metadata(
+          :target_machine => target_machine,
+          :nbr_sections => nbr_sections,
+          :symbol_table_offset => symbol_table_offset,
+          :nbr_symbols => nbr_symbols,
+          :optional_header_size => optional_header_size,
+          :characteristics => characteristics
+        )
         cursor += 20
         progress(cursor)
         file_alignment = nil
@@ -115,19 +123,19 @@ module FilesHunter
           invalid_data("@#{cursor+70} - Invalid DLL characteristics #{dll_characteristics}: bits should be 0") if ((dll_characteristics & 4111) != 0)
           nbr_rva_and_sizes = nil
           if mode_pe32
-            stack_reserve_size = BinData::Uint32le.read(@data[cursor+72..cursor+75])
-            stack_commit_size = BinData::Uint32le.read(@data[cursor+76..cursor+79])
-            heap_reserve_size = BinData::Uint32le.read(@data[cursor+80..cursor+83])
-            heap_commit_size = BinData::Uint32le.read(@data[cursor+84..cursor+87])
-            loader_flags = BinData::Uint32le.read(@data[cursor+88..cursor+91])
+            # stack_reserve_size = BinData::Uint32le.read(@data[cursor+72..cursor+75])
+            # stack_commit_size = BinData::Uint32le.read(@data[cursor+76..cursor+79])
+            # heap_reserve_size = BinData::Uint32le.read(@data[cursor+80..cursor+83])
+            # heap_commit_size = BinData::Uint32le.read(@data[cursor+84..cursor+87])
+            # loader_flags = BinData::Uint32le.read(@data[cursor+88..cursor+91])
             nbr_rva_and_sizes = BinData::Uint32le.read(@data[cursor+92..cursor+95])
             cursor += 96
           else
-            stack_reserve_size = BinData::Uint64le.read(@data[cursor+72..cursor+79])
-            stack_commit_size = BinData::Uint64le.read(@data[cursor+80..cursor+87])
-            heap_reserve_size = BinData::Uint64le.read(@data[cursor+88..cursor+95])
-            heap_commit_size = BinData::Uint64le.read(@data[cursor+96..cursor+103])
-            loader_flags = BinData::Uint32le.read(@data[cursor+104..cursor+107])
+            # stack_reserve_size = BinData::Uint64le.read(@data[cursor+72..cursor+79])
+            # stack_commit_size = BinData::Uint64le.read(@data[cursor+80..cursor+87])
+            # heap_reserve_size = BinData::Uint64le.read(@data[cursor+88..cursor+95])
+            # heap_commit_size = BinData::Uint64le.read(@data[cursor+96..cursor+103])
+            # loader_flags = BinData::Uint32le.read(@data[cursor+104..cursor+107])
             nbr_rva_and_sizes = BinData::Uint32le.read(@data[cursor+108..cursor+111])
             cursor += 112
           end
@@ -145,6 +153,17 @@ module FilesHunter
           # We should have reached the end of optional header
           # Sometimes optional_header_end_offset is invalid
           invalid_data("@#{cursor} - Optional headers end at #{cursor} but were supposed to end at #{optional_header_end_offset}") if (cursor != optional_header_end_offset)
+          metadata(
+            :mode_pe32 => mode_pe32,
+            :file_alignment => file_alignment,
+            :win32_version => win32_version,
+            :headers_size => headers_size,
+            :subsystem => subsystem,
+            :dll_characteristics => dll_characteristics,
+            :nbr_rva_and_sizes => nbr_rva_and_sizes,
+            :certificate_table_offset => certificate_table_offset,
+            :certificate_table_size => certificate_table_size
+          )
         end
         log_debug "@#{cursor} - PE Header: nbr_sections=#{nbr_sections} file_alignment=#{file_alignment} symbol_table_offset=#{symbol_table_offset} nbr_symbols=#{nbr_symbols} certificate_table_offset=#{certificate_table_offset} certificate_table_size=#{certificate_table_size}"
         # Now decode section headers

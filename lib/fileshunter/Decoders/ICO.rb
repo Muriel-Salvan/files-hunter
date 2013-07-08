@@ -26,6 +26,9 @@ module FilesHunter
         end
         progress(cursor)
         found_relevant_data(extension)
+        metadata(
+          :nbr_images => nbr_images
+        )
         # Decode each image
         images.each do |image_offset, image_size|
           invalid_data("@#{cursor} - Image offset (#{image_offset}) should be #{cursor}") if (cursor != image_offset)
