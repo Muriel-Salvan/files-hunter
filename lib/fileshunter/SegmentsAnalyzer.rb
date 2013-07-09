@@ -78,6 +78,8 @@ module FilesHunter
     def get_segments(file_name)
       segments = []
 
+      @parsing_cancelled = false
+
       File.open(file_name, 'rb') do |file|
         content = IOBlockReader.init(file, :block_size => @block_size)
 

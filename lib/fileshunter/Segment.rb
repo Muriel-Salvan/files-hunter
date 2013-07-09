@@ -31,7 +31,7 @@ module FilesHunter
     # * *extension* (_Symbol_ or <em>list<Symbol></em>): Specify extension
     # * *truncated* (_Boolean_): Specify truncated flag
     # * *metadata* (<em>map<Symbol,Object></em>): Metadata (Decoder dependent)
-    def initialize(begin_offset, end_offset, extension, truncated, metadata)
+    def initialize(begin_offset = nil, end_offset = nil, extension = nil, truncated = nil, metadata = nil)
       @begin_offset = begin_offset
       @end_offset = end_offset
       @extensions = (extension.is_a?(Symbol)) ? [ extension ] : extension
