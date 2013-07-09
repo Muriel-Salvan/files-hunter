@@ -11,6 +11,8 @@ $: << "#{root_path}/ext"
 # Require the main library
 require 'fileshunter'
 
+#activate_log_debug(true)
+
 # Load test files to execute
 require 'fileshunter/common'
 require 'fileshunter/testcases/sane_files'

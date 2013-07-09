@@ -31,6 +31,7 @@ module FilesHunter
           invalid_data("@#{cursor} - Unknown RIFF #{name}") if (!ACCEPTABLE_RIFF.include?(name))
           size = ((name == BEGIN_PATTERN_RIFF) or (name == BEGIN_PATTERN_JUNK)) ? BinData::Uint32le.read(@data[cursor+4..cursor+7]) : BinData::Uint32be.read(@data[cursor+4..cursor+7])
           size += 1 if size.odd?
+          log_debug "@#{cursor} - Found RIFF segment #{name} of size #{size}"
           if (name == BEGIN_PATTERN_JUNK)
             if (found_RIFF)
               # We stop at the end of this chunk

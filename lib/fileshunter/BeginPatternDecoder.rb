@@ -120,7 +120,7 @@ module FilesHunter
             # We have a candidate
             # Try to decode it
             decoded_end_offset = nil
-            truncated = nil
+            truncated = false
             @extension = nil
             @last_offset_to_be_decoded = nil
             begin
