@@ -4,9 +4,9 @@ module FilesHunter
 
     class MP3 < BeginPatternDecoder
 
-      BEGIN_PATTERN_MP3 = Regexp.new("\xFF[\xE2-\xFF][\x00-\xEF]", nil, 'n')
       BEGIN_PATTERN_ID3V1 = 'TAG'.force_encoding('ASCII-8BIT')
       BEGIN_PATTERN_ID3V2 = 'ID3'.force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_MP3 = Regexp.new("(\xFF[\xE2-\xFF][\x00-\xEF]|#{BEGIN_PATTERN_ID3V1}|#{BEGIN_PATTERN_ID3V2})", nil, 'n')
 
       BITRATE_INDEX = [
         [ 32,  32,  32,  32,  8 ],
@@ -33,11 +33,11 @@ module FilesHunter
       MIN_ACCEPTABLE_TIME_MS = 1000
 
       def get_begin_pattern
-        return [ BEGIN_PATTERN_MP3, BEGIN_PATTERN_ID3V1, BEGIN_PATTERN_ID3V2 ], { :max_regexp_size => 3 }
+        return BEGIN_PATTERN_MP3, { :max_regexp_size => 3 }
       end
 
       def check_begin_pattern(begin_pattern_offset, pattern_index)
-        if (pattern_index == 0)
+        if (@data[begin_pattern_offset] == "\xFF")
           header_bytes = @data[begin_pattern_offset+1..begin_pattern_offset+3].bytes.to_a
           return (((header_bytes[0] & 24) != 16) and
                   ((header_bytes[0] & 6) != 0) and

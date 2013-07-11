@@ -12,13 +12,14 @@ module FilesHunter
         BEGIN_PATTERN_RIFX,
         BEGIN_PATTERN_JUNK
       ]
+      BEGIN_PATTERN_FILE = Regexp.new("RIF(F|X)", nil, 'n')
       RIFF_TYPES = {
         'WAVE' => :wav,
         'AVI ' => :avi
       }
 
       def get_begin_pattern
-        return [ BEGIN_PATTERN_RIFF, BEGIN_PATTERN_RIFX ], { :offset_inc => 4 }
+        return BEGIN_PATTERN_FILE, { :offset_inc => 4 }
       end
 
       def decode(offset)

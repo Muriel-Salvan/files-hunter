@@ -187,10 +187,10 @@ module FilesHunter
                 text_end_offset = cursor
               end
             end
-            log_debug "@#{text_begin_offset} - Found text up to #{text_end_offset} with encoding #{encoding} and header of size #{text_header_size}"
+            #log_debug "@#{text_begin_offset} - Found text up to #{text_end_offset} with encoding #{encoding} and header of size #{text_header_size}"
             # Consider text files longer than a certain size only
             if (text_end_offset - text_begin_offset < 512*((encoding == Encoding::ASCII_8BIT) ? 1 : 2))
-              log_debug "@#{text_begin_offset} - Text section is too short (#{text_end_offset - text_begin_offset}) to be identified as text"
+              #log_debug "@#{text_begin_offset} - Text section is too short (#{text_end_offset - text_begin_offset}) to be identified as text"
             else
               # Now check some formats
               text = @data[text_begin_offset+text_header_size..text_end_offset-1].clone.force_encoding(encoding)

@@ -109,6 +109,8 @@ module FilesHunter
           ].each do |decoder_name|
             @plugins.access_plugin(:Decoders, decoder_name) do |decoder|
               log_debug "[#{file_name}] - Try #{decoder_name}"
+              # require 'ruby-prof'
+              # RubyProf.start
               segments = foreach_unknown_segment(segments) do |begin_offset, end_offset|
                 log_debug "[#{file_name}] - Try #{decoder_name} for segment [#{begin_offset}, #{end_offset}]"
                 content.set_limits(begin_offset, end_offset)
@@ -120,6 +122,8 @@ module FilesHunter
                 end
                 next decoder.segments_found
               end
+              # result = RubyProf.stop
+              # RubyProf::FlatPrinter.new(result).print(STDOUT)
             end
           end
         rescue CancelParsingError

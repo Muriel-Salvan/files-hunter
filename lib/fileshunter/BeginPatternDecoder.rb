@@ -126,8 +126,12 @@ module FilesHunter
             begin
               # If the decoder can perform additional tests, call them
               begin_pattern_valid = (@has_to_check_begin_pattern) ? check_begin_pattern(begin_pattern_offset, pattern_index) : true
-              # Call the Decoder
-              decoded_end_offset = yield(begin_pattern_offset, pattern_index) if begin_pattern_valid
+              if begin_pattern_valid
+                # Call the Decoder
+                decoded_end_offset = yield(begin_pattern_offset, pattern_index)
+              else
+                log_debug 'Invalid pattern returned by the check.'
+              end
             rescue InvalidDataError
               # If data was already validated, it means that the segment is truncated.
               log_debug "Got an invalid data exception while decoding data: #{$!}"
