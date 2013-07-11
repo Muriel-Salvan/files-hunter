@@ -123,7 +123,7 @@ module FilesHunter
           # List of segments identified in this file
           segments = segments_analyzer.get_segments(file_name)
 
-          log_info "[#{file_name}] - Found #{segments.size} segments: #{segments.map { |segment| "#{segment.extension.to_s}#{segment.truncated ? ' (truncated)' : ''}" }}"
+          log_info "[#{file_name}] - Found #{segments.size} segments: #{segments.map { |segment| "#{segment.extensions.join(',')}#{segment.truncated ? ' (truncated)' : ''}" }}"
 
           if @log
             log_files = [EXTRACTOR_LOG]
@@ -136,7 +136,7 @@ module FilesHunter
             end
             log_files.each do |log_file|
               File.open(log_file, 'a') do |file|
-                file.puts "[#{file_name}] - Found #{segments.size} segments: #{segments.map { |segment| "#{segment.extension.to_s}#{segment.truncated ? ' (truncated)' : ''}" }}"
+                file.puts "[#{file_name}] - Found #{segments.size} segments: #{segments.map { |segment| "#{segment.extensions.join(',')}}#{segment.truncated ? ' (truncated)' : ''}" }}"
               end
             end
           end
