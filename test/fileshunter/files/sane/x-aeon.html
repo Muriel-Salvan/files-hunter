@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+    <title>X-Aeon Solutions</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon"/>
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon"/>
+    <link href="/assets/application-4019ae3ddbfc2d6bd15967bc767c265d.css" media="all" rel="stylesheet" type="text/css" />
+    <script src="/assets/application-46e8a9eb9288213bddadebe170be6170.js" type="text/javascript"></script>
+    <meta content="authenticity_token" name="csrf-param" />
+<meta content="DlVYjfvFYz/BhhVAaQxquD6fmcCxUVaVx7+gkBqiaOE=" name="csrf-token" />
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-24785787-1']);
+      _gaq.push(['_trackPageview']);
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <script type="text/javascript">
+//<![CDATA[
+
+          // This lock is used to avoid several concurrent clicks on toggling.
+          var gGlobalLock = false;
+
+          // The toggle function
+          //
+          // Parameters:
+          // * *iPaneID* (_String_): The pane ID to toggle
+          // * *iShowButtonID* (_String_): The show button ID
+          // * *iHideButtonID* (_String_): The hide button ID
+          // * *iDown* (_Boolean_): Do we toggle down ?
+          function togglePane(iPaneID, iShowButtonID, iHideButtonID, iDown) {
+            if (!gGlobalLock) {
+              gGlobalLock = true;
+              if (iDown) {
+                new Effect.BlindDown(iPaneID, {duration:0.3});
+                $(iShowButtonID).hide();
+                $(iHideButtonID).show();
+              } else {
+                new Effect.BlindUp(iPaneID, {duration:0.3});
+                $(iShowButtonID).show();
+                $(iHideButtonID).hide();
+              }
+              // Reset the lock after the duration
+              setTimeout('gGlobalLock = false;', 300);
+            }
+          }
+
+//]]>
+</script>
+  </head>
+  <body>
+
+    <div class="meta">
+    </div>
+    <div id="header">
+      <a href="index.html" class="logo"><img alt="X-Aeon Solutions" height="50" src="/assets/Logo2_Small_166x50-46e47fa6bd67163e01c308d301ba42fb.png" title="X-Aeon Solutions" width="166" /></a>
+      <ul id="menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="/home/about">About us</a></li>
+        <li><a href="/home/competencies">Competencies</a></li>
+        <li><a href="/home/projects">Projects</a></li>
+        <li><a href="/home/submit">Submit a project</a></li>
+        <!--<li><a href="/home/testimonials">Testimonials</a></li>-->
+        <li><a href="http://x-aeon.com/wp" target="_blank">Blog</a></li>
+        <li class="last"><a href="/home/contact">Contact</a></li>
+      </ul>
+      <div class="slogan">
+        <p>Using development to provide efficient solutions</p>
+        &nbsp;
+      </div>
+    </div>
+    <div id="FlashNotice"></div>
+    <div id="FlashError"></div>
+    <div id="content">
+      <div id="FrontPageLogo">
+  <img alt="X-Aeon Solutions" height="167" src="/assets/Logo2_1000x167-2c2326e3fe2e93f87da77728635f4c64.jpg" title="X-Aeon Solutions" width="1000" />
+</div>
+<div id="blocksLeft">
+  <div id="BlockLeft1" class="block">
+    <span class="blockTitle">A new vision ...</span>
+    <div class="BlockTitleImageSupport"><div class="BlockTitleImage">&nbsp</div></div>
+    <p class="blockText">
+      ... of development and its applications. This is what X-Aeon Solutions can bring.
+    </p>
+    <p class="blockText">
+      Our experts can handle a <b>development project from requirements gathering, through complete development with tight follow-up, documentation and testing, to final delivery and maintenance</b>.
+      X-Aeon Solutions promotes Open-Source projects, and manages commercial ones as well, worldwide.
+    </p>
+    <p class="blockText">
+      Our experienced team focuses on <b>robust code quality, deep testing and documentation, using highly modular and flexible architectures</b> to give you the power of <b>easy maintenance</b>.
+    </p>
+    <a href="/home/about" class="more">
+      <img alt="About us" height="27" src="/assets/Button_MoreInfo-d94fae3bde616aec220fac53c814d5dc.png" title="About us" width="105" />
+</a>  </div>
+  <div id="BlockLeft2" class="block">
+    <span class="blockTitle">Technical competencies</span>
+    <div class="BlockTitleImageSupport"><div class="BlockTitleImage">&nbsp</div></div>
+    <p class="blockText">
+      X-Aeon Solutions is constantly growing its competencies range, learning new languages, frameworks and architectures. Here are the main ones:
+      <ul class="list">
+        <li><b>Dynamic and high-level</b>: Ruby, Python, Java</li>
+        <li><b>Performant and low-level</b>: C, C++, Turbo Pascal, ASM</li>
+        <li><b>Web</b>: Ruby on Rails, HTML, JavaScript, AJAX</li>
+        <li><b>User interfaces</b>: Delphi, WxWidgets, Spring</li>
+        <li><b>Architectures</b>: MVC, Design Patterns, REST, Client/Server</li>
+        <li><b>Management</b>: Agile, Extreme</li>
+      </ul>
+    </p>
+    <a href="/home/competencies" class="more">
+      <img alt="Our competencies" height="27" src="/assets/Button_MoreInfo-d94fae3bde616aec220fac53c814d5dc.png" title="Our competencies" width="105" />
+</a>  </div>
+</div>
+<div id="blockRight">
+  <span class="blockTitle">Projects from X-Aeon Solutions:</span>
+  <div class="BlockTitleImageSupport"><div class="BlockTitleImage">&nbsp</div></div>
+    <div class="ProjectContainerEven">
+
+<div class="ProjectInfo">
+  <div class="ProjectHeader">
+    <div class="ProjectLogo">
+      <a href="http://murielesteban.com" target="_blank">
+        <img alt="Muriel Esteban Official Website" class="ProjectImage" src="http://murielesteban.com/assets/Mask_Black_250x250.png" title="Muriel Esteban Official Website" />
+      </a>
+    </div>
+    <div class="ProjectName">
+      <a href="http://murielesteban.com" target="_blank">
+        Muriel Esteban Official Website
+      </a>
+    </div>
+    <div class="ProjectSummary">
+      Official website of an electronic composer and music artist, with heavy multimedia content and social features
+    </div>
+  </div>
+  <div class="ToggleButtons">
+      <div class="ToggleButtonUserShow" onclick="togglePane('UserWindow_murielesteban', 'UserWindowButtonShow_murielesteban', 'UserWindowButtonHide_murielesteban', true); return false;">
+        <a id="UserWindowButtonShow_murielesteban" style="display: none;" href="#" onclick="togglePane('UserWindow_murielesteban', 'UserWindowButtonShow_murielesteban', 'UserWindowButtonHide_murielesteban', true); return false;">
+          <span class="ShowName">User links</span>
+        </a>
+      </div>
+      <div class="ToggleButtonUserHide" onclick="togglePane('UserWindow_murielesteban', 'UserWindowButtonShow_murielesteban', 'UserWindowButtonHide_murielesteban', false); return false;">
+        <a id="UserWindowButtonHide_murielesteban" style="display: none;" href="#" onclick="togglePane('UserWindow_murielesteban', 'UserWindowButtonShow_murielesteban', 'UserWindowButtonHide_murielesteban', false); return false;">
+          <span class="HideName">User links</span>
+        </a>
+      </div>
+  </div>
+    <div id="UserWindow_murielesteban" class="UserWindow">
+      <table width="100%">
+        <tr>
+        </tr>
+        <tr>
+            <td style="width: 50%;">
+              <a href="http://murielesteban.com/url?site=phpbb&amp;url=http%3A%2F%2Fmurielesteban.com%2Fphpbb%2Fviewforum.php%3Ff%3D3" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="BugTrackerImage" src="http://rubypackager.sourceforge.net/wiki/images/c/c7/T_Bugs.png" title="Bug tracker" alt="Bug tracker"/>
+          </td>
+          <td>
+            <span class="BugTrackerName">Bug tracker</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td>
+        </tr>
+        <tr>
+        </tr>
+      </table>
+    </div>
+  <script type="text/javascript">
+//<![CDATA[
+
+
+       $('UserWindow_murielesteban').hide();
+       $('UserWindowButtonShow_murielesteban').show();
+
+
+
+//]]>
+</script>
+</div>
+
+    </div>
+    <div class="ProjectContainerOdd">
+
+<div class="ProjectInfo">
+  <div class="ProjectHeader">
+    <div class="ProjectLogo">
+      <a href="http://rdi.sourceforge.net/" target="_blank">
+        <img alt="RDI: Runtime Dependencies Installer" class="ProjectImage" src="http://rdi.sourceforge.net/wiki/images/c/c9/Logo.png" title="RDI: Runtime Dependencies Installer" />
+      </a>
+    </div>
+      <div class="ProjectDonate">
+        <a href="http://sourceforge.net/donate/index.php?group_id=274498" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="DonateImage" src="http://rubypackager.sourceforge.net/wiki/images/5/52/T_DonateProject.png" title="Donate" alt="Donate"/>
+          </td>
+          <td>
+            <span class="DonateName">Donate</span>
+          </td>
+        </tr>
+      </table>
+
+        </a>
+      </div>
+    <div class="ProjectName">
+      <a href="http://rdi.sourceforge.net/" target="_blank">
+        RDI: Runtime Dependencies Installer
+      </a>
+    </div>
+    <div class="ProjectSummary">
+      RDI is a library that gives your application the ability to install its dependencies at runtime. Perfect for plugins oriented architectures. Many kind of deps: RPMs, DEBs, .so, .dll, RubyGems... Easily extensible to new kinds.
+    </div>
+  </div>
+    <div class="ProjectDownload">
+      <a href="http://sourceforge.net/projects/rdi/files/0.1.1.20091105/RDI-0.1.1.20091105.gem/download" target="_blank">
+        <table>
+          <tr align=\"center\">
+            <td>
+              <img alt="Download v0.1.1" class="DownloadImage" src="http://rubypackager.sourceforge.net/wiki/images/4/4d/T_Download.png" title="Download v0.1.1" />
+            </td>
+            <td>
+              <span class="DownloadName">Download v0.1.1</span>
+              <span class="DownloadTag">- Alpha</span>
+              <span class="DownloadDate"> (05 Nov 2009)</span>
+            </td>
+          </tr>
+        </table>
+      </a>
+    </div>
+  <div class="ToggleButtons">
+      <div class="ToggleButtonUserShow" onclick="togglePane('UserWindow_rdi', 'UserWindowButtonShow_rdi', 'UserWindowButtonHide_rdi', true); return false;">
+        <a id="UserWindowButtonShow_rdi" style="display: none;" href="#" onclick="togglePane('UserWindow_rdi', 'UserWindowButtonShow_rdi', 'UserWindowButtonHide_rdi', true); return false;">
+          <span class="ShowName">User links</span>
+        </a>
+      </div>
+      <div class="ToggleButtonUserHide" onclick="togglePane('UserWindow_rdi', 'UserWindowButtonShow_rdi', 'UserWindowButtonHide_rdi', false); return false;">
+        <a id="UserWindowButtonHide_rdi" style="display: none;" href="#" onclick="togglePane('UserWindow_rdi', 'UserWindowButtonShow_rdi', 'UserWindowButtonHide_rdi', false); return false;">
+          <span class="HideName">User links</span>
+        </a>
+      </div>
+      <div class="ToggleButtonDevShow" onclick="togglePane('DevWindow_rdi', 'DevWindowButtonShow_rdi', 'DevWindowButtonHide_rdi', true); return false;">
+        <a id="DevWindowButtonShow_rdi" style="display: none;" href="#" onclick="togglePane('DevWindow_rdi', 'DevWindowButtonShow_rdi', 'DevWindowButtonHide_rdi', true); return false;">
+          <span class="ShowName">Developer links</span>
+        </a>
+      </div>
+      <div class="ToggleButtonDevHide" onclick="togglePane('DevWindow_rdi', 'DevWindowButtonShow_rdi', 'DevWindowButtonHide_rdi', false); return false;">
+        <a id="DevWindowButtonHide_rdi" style="display: none;" href="#" onclick="togglePane('DevWindow_rdi', 'DevWindowButtonShow_rdi', 'DevWindowButtonHide_rdi', false); return false;">
+          <span class="HideName">Developer links</span>
+        </a>
+      </div>
+  </div>
+    <div id="UserWindow_rdi" class="UserWindow">
+      <table width="100%">
+        <tr>
+            <td style="width: 50%;">
+              <a href="http://rdi.sourceforge.net/" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="UserGuideImage" src="http://rubypackager.sourceforge.net/wiki/images/8/87/T_UserGuide.png" title="User guide" alt="User guide"/>
+          </td>
+          <td>
+            <span class="UserGuideName">User guide</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 50%;">
+              <a href="http://sourceforge.net/tracker/?group_id=274498&amp;atid=1166448" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="BugTrackerImage" src="http://rubypackager.sourceforge.net/wiki/images/c/c7/T_Bugs.png" title="Bug tracker" alt="Bug tracker"/>
+          </td>
+          <td>
+            <span class="BugTrackerName">Bug tracker</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td>
+            <td style="width: 50%;">
+              <a href="http://sourceforge.net/tracker/?group_id=274498&amp;atid=1166451" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="FeatureTrackerImage" src="/assets/Pencil-841dbba51aea3067f4cc85d41d5c89a5.png" title="Feature tracker" alt="Feature tracker"/>
+          </td>
+          <td>
+            <span class="FeatureTrackerName">Feature tracker</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <a href="http://sourceforge.net/projects/rdi/forums" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="ForumImage" src="http://rubypackager.sourceforge.net/wiki/images/f/f0/T_Forum.png" title="Forum" alt="Forum"/>
+          </td>
+          <td>
+            <span class="ForumName">Forum</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td>
+            <td style="width: 50%;">
+              <a href="http://rdi.sourceforge.net/rdoc/latest/ChangeLog.html" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="ChangeLogImage" src="http://rubypackager.sourceforge.net/wiki/images/d/dd/T_ChangeLog.png" title="Change log" alt="Change log"/>
+          </td>
+          <td>
+            <span class="ChangeLogName">Change log</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td>
+        </tr>
+      </table>
+    </div>
+    <div id="DevWindow_rdi" class="DevWindow">
+      <table width="100%">
+        <tr>
+            <td style="width: 50%;">
+              <a href="http://rdi.sourceforge.net/" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="DevGuideImage" src="http://rubypackager.sourceforge.net/wiki/images/0/04/T_DeveloperGuide.png" title="Developer guide" alt="Developer guide"/>
+          </td>
+          <td>
+            <span class="DevGuideName">Developer guide</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td>
+            <td>
+              <a href="http://rdi.sourceforge.net/rdoc/latest/" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="CodeDocImage" src="http://rubypackager.sourceforge.net/wiki/images/a/ac/T_GeneratedDoc.png" title="Source documentation" alt="Source documentation"/>
+          </td>
+          <td>
+            <span class="CodeDocName">Source documentation</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td style="width: 50%;">
+        </tr>
+        <tr>
+            <td>
+              <a href="http://rdi.git.sourceforge.net/" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="GitImage" src="http://git-scm.com/favicon.png" title="Git repository" alt="Git repository"/>
+          </td>
+          <td>
+            <span class="GitName">Git repository</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td style="width: 50%;">
+        </tr>
+        <tr>
+            <td style="width: 50%;">
+              <a href="http://rdi.sourceforge.net/rdoc/latest/TODO.html" target="_blank">
+
+      <table>
+        <tr align="center">
+          <td>
+            <img class="RoadmapImage" src="http://rubypackager.sourceforge.net/wiki/images/7/75/T_TODO.png" title="Roadmap" alt="Roadmap"/>
+          </td>
+          <td>
+            <span class="RoadmapName">Roadmap</span>
+          </td>
+        </tr>
+      </table>
+
+              </a>
+            </td>
+        </tr>
+      </table>
+    </div>
+  <script type="text/javascript">
+//<![CDATA[
+
+
+       $('UserWindow_rdi').hide();
+       $('UserWindowButtonShow_rdi').show();
+
+
+       $('DevWindow_rdi').hide();
+       $('DevWindowButtonShow_rdi').show();
+
+
+//]]>
+</script>
+</div>
+
+    </div>
+    <div class="ProjectContainerEven">
+
+<div class="ProjectInfo">
+  <div class="ProjectHeader">
+    <div class="ProjectLogo">
+      <a href="http://ultimact.com" target="_blank">
+        <img alt="jicMail Website" class="ProjectImage" src="http://x-aeon.com/assets/jicMail.png" title="jicMail Website" />
+      </a>
+    </div>
+    <div class="ProjectName">
+      <a href="http://ultimact.com" target="_blank">
+        jicMail Website
+      </a>
+    </div>
+    <div class="ProjectSummary">
+      Online service for testaments
+    </div>
+  </div>
+  <div class="ToggleButtons">
+  </div>
+  <script type="text/javascript">
+//<![CDATA[
+
+
+
+
+//]]>
+</script>
+</div>
+
+    </div>
+  <a href="/home/projects" class="more">
+    <img alt="All projects" height="27" src="/assets/Button_AllProjects-51fd93c141f7d8af99d2e34bf4698b11.png" title="All projects" width="105" />
+</a></div>
+
+    </div>
+    <div id="footer">
+      Copyright &copy; 2011 X-Aeon Solutions. All rights reserved.
+      &nbsp;|&nbsp;
+      Powered by <a href="http://www.rubyonrails.org">Ruby on Rails</a>
+      &nbsp;|&nbsp;
+      Design by <a href="http://www.bestfreetemplates.info" target="_blank" title="Free CSS templates">BFT</a>
+    </div>
+
+  </body>
+</html>

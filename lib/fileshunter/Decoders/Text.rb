@@ -201,6 +201,10 @@ module FilesHunter
                 extension = :srt
               elsif is_text_rtf?(lines, encoding)
                 extension = :rtf
+              elsif is_text_html?(lines, encoding)
+                extension = :html
+              elsif is_text_xml?(lines, encoding)
+                extension = :xml
               end
               found_segment(text_begin_offset, text_end_offset, extension, false, :encoding => encoding)
             end
@@ -219,6 +223,14 @@ module FilesHunter
 
       def is_text_rtf?(lines, encoding)
         return (lines[0] =~ Regexp.new('{\\\\rtf'.encode(encoding)))
+      end
+
+      def is_text_html?(lines, encoding)
+        return lines[0] =~ Regexp.new('<!DOCTYPE html'.encode(encoding))
+      end
+
+      def is_text_xml?(lines, encoding)
+        return lines[0] =~ Regexp.new('<?xml '.encode(encoding))
       end
 
     end

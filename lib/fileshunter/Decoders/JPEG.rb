@@ -56,7 +56,7 @@ module FilesHunter
             # Does it have entropy data?
             if (c_1 == MARKER_WITH_ENTROPY_DATA)
               # There is entropy data
-              found_relevant_data(:jpg)
+              found_relevant_data([:jpg, :thm])
               # Find the next marker that is FF xx, with xx being different than 00, D0..D7 and FF
               cursor = @data.index(MARKERS_IGNORED_IN_ENTROPY_DATA_REGEXP, cursor + 2 + size, 2)
               log_debug "=== Entropy data gets to cursor #{cursor}"
