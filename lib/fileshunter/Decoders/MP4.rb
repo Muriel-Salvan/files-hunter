@@ -17,9 +17,9 @@ module FilesHunter
       ]
 
       KNOWN_EXTENSIONS = {
-        '3g2a' => '3gp',
-        '3g2b' => '3gp',
-        '3g2c' => '3gp',
+        '3g2a' => '3g2',
+        '3g2b' => '3g2',
+        '3g2c' => '3g2',
         '3ge6' => '3gp',
         '3ge7' => '3gp',
         '3gg6' => '3gp',
@@ -120,8 +120,10 @@ module FilesHunter
           invalid_data("@#{cursor} - Invalid box type: #{name}") if (!ACCEPTABLE_BOX_TYPES.include?(name))
           if (name == 'ftyp')
             # Get the extension
-            known_extension = KNOWN_EXTENSIONS[@data[cursor+8..cursor+11]]
-            invalid_data("@#{cursor} - Unknown MP4 ftyp: #{@data[cursor+8..cursor+11]}") if (known_extension == nil)
+            ftyp_id = @data[cursor+8..cursor+11]
+            log_debug "@#{cursor} - Found ftyp #{ftyp_id}."
+            known_extension = KNOWN_EXTENSIONS[ftyp_id]
+            invalid_data("@#{cursor} - Unknown MP4 ftyp: #{ftyp_id}") if (known_extension == nil)
             found_relevant_data(known_extension.to_sym)
             found_ftyp = true
           end
