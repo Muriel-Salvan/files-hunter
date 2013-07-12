@@ -39,7 +39,7 @@ module FilesHunter
         end
         progress(cursor)
         # Make sure images are not overlapping
-        next_offset_min = cursor-@begin_offset
+        next_offset_min = cursor-offset
         images.sort.each do |image_offset, image_size|
           invalid_data("@#{cursor} - Invalid image offset: #{image_offset} could not be before #{next_offset_min} as it belongs to another image") if (image_offset < next_offset_min)
           next_offset_min += image_size
@@ -50,12 +50,12 @@ module FilesHunter
         metadata(
           :nbr_images => nbr_images
         )
-        cursor = @begin_offset + next_offset_min
+        cursor = offset + next_offset_min
         progress(cursor)
         ending_offset = cursor
         # # Decode each image
         # images.each do |image_offset, image_size|
-        #   invalid_data("@#{cursor} - Image offset (#{image_offset}) should be #{cursor-@begin_offset}") if (cursor-@begin_offset != image_offset)
+        #   invalid_data("@#{cursor} - Image offset (#{image_offset}) should be #{cursor-offset}") if (cursor-offset != image_offset)
         #   cursor += image_size
         #   progress(cursor)
         # end

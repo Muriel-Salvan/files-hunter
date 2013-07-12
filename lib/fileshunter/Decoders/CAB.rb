@@ -19,7 +19,7 @@ module FilesHunter
         # CFHEADER
         cabinet_size = BinData::Uint32le.read(@data[offset+8..offset+11])
         invalid_data("@#{offset} - Invalid CAB header.") if (BinData::Uint32le.read(@data[offset+12..offset+15]) != 0)
-        cf_file_offset = BinData::Uint32le.read(@data[offset+16..offset+19])
+        #cf_file_offset = BinData::Uint32le.read(@data[offset+16..offset+19])
         invalid_data("@#{offset} - Invalid CAB header.") if (BinData::Uint32le.read(@data[offset+20..offset+23]) != 0)
         minor_version = @data[offset+24].ord
         major_version = @data[offset+25].ord
@@ -58,7 +58,7 @@ module FilesHunter
           cursor = idx_terminator + 1
         end
         progress(cursor)
-        found_relevant_data([:cab, :msu])
+        found_relevant_data([:cab, :msu, :mzz])
         metadata(
           :cabinet_size => cabinet_size,
           :minor_version => minor_version,
@@ -79,7 +79,7 @@ module FilesHunter
           first_data_offset = BinData::Uint32le.read(@data[cursor..cursor+3])
           nbr_data_blocks = BinData::Uint16le.read(@data[cursor+4..cursor+5])
           data_blocks << [ first_data_offset, nbr_data_blocks ]
-          compression_type = BinData::Uint16le.read(@data[cursor+6..cursor+7])
+          # compression_type = BinData::Uint16le.read(@data[cursor+6..cursor+7])
           cursor += 8 + reserve_field_size_in_folder
           progress(cursor)
         end
@@ -87,12 +87,12 @@ module FilesHunter
         # CFFILE
         log_debug "@#{cursor} - Beginning of #{nbr_cf_files} CFFILE structures"
         nbr_cf_files.times do |idx_cf_file|
-          file_size = BinData::Uint32le.read(@data[cursor..cursor+3])
-          file_offset = BinData::Uint32le.read(@data[cursor+4..cursor+7])
-          idx_file_in_folder = BinData::Uint16le.read(@data[cursor+8..cursor+9])
-          file_date = BinData::Uint16le.read(@data[cursor+10..cursor+11])
-          file_time = BinData::Uint16le.read(@data[cursor+12..cursor+13])
-          file_attrs = BinData::Uint16le.read(@data[cursor+14..cursor+15])
+          # file_size = BinData::Uint32le.read(@data[cursor..cursor+3])
+          # file_offset = BinData::Uint32le.read(@data[cursor+4..cursor+7])
+          # idx_file_in_folder = BinData::Uint16le.read(@data[cursor+8..cursor+9])
+          # file_date = BinData::Uint16le.read(@data[cursor+10..cursor+11])
+          # file_time = BinData::Uint16le.read(@data[cursor+12..cursor+13])
+          # file_attrs = BinData::Uint16le.read(@data[cursor+14..cursor+15])
           cursor += 16
           idx_terminator = @data.index(END_STRING_TERMINATOR, cursor)
           invalid_data("@#{cursor} - Unable to read file name") if (idx_terminator == nil)
@@ -107,9 +107,9 @@ module FilesHunter
           first_datablock_offset, nbr_datablocks = data_blocks.shift
           invalid_data("@#{cursor} - We should be on the next data block offset (#{offset+first_datablock_offset})") if (cursor-offset != first_datablock_offset)
           nbr_datablocks.times do |idx_datablock|
-            data_crc = BinData::Uint32le.read(@data[cursor..cursor+3])
+            # data_crc = BinData::Uint32le.read(@data[cursor..cursor+3])
             nbr_compressed_bytes = BinData::Uint16le.read(@data[cursor+4..cursor+5])
-            nbr_uncompressed_bytes = BinData::Uint16le.read(@data[cursor+6..cursor+7])
+            # nbr_uncompressed_bytes = BinData::Uint16le.read(@data[cursor+6..cursor+7])
             cursor += 8 + reserve_field_size_in_data + nbr_compressed_bytes
             progress(cursor)
           end

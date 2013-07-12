@@ -37,150 +37,163 @@ module FilesHunter
           :nbr_bits_per_sample_header => nbr_bits_per_sample_header
         )
         # Read frames
+        nbr_frames = 0
         while (ending_offset == nil)
           log_debug "@#{cursor} - Reading new frame"
           # Check frame header
           header_bytes = @data[cursor..cursor+4].bytes.to_a
-          invalid_data("@#{cursor} - Incorrect frame header") if ((header_bytes[0] != 255) or
-                                                                  ((header_bytes[1] & 254) != 248) or
-                                                                  ((header_bytes[2] & 240) == 0) or
-                                                                  ((header_bytes[2] & 15) == 15) or
-                                                                  (header_bytes[3] >= 176) or
-                                                                  ((header_bytes[3] & 14) == 6) or
-                                                                  ((header_bytes[3] & 14) == 14) or
-                                                                  (header_bytes[3].odd?))
-          utf8_number_size = get_utf8_size(header_bytes[4])
-          invalid_data("@#{cursor} - Incorrect UTF-8 size") if ((header_bytes[1].even?) and (utf8_number_size >= 7))
-          cursor += 4 + utf8_number_size
-          block_size = 0
-          block_size_byte = ((header_bytes[2] & 240) >> 4)
-          log_debug "@#{cursor} - block_size_byte=#{block_size_byte}"
-          case block_size_byte
-          when 1
-            block_size = 192
-          when 2..5
-            block_size = 576 * (2**(block_size_byte-2))
-          when 6
-            # Blocksize is coded here on 8 bits
-            block_size = @data[cursor].ord + 1
-            cursor += 1
-          when 7
-            # Blocksize is coded here on 16 bits
-            block_size = BinData::Uint16be.read(@data[cursor..cursor+1]) + 1
-            cursor += 2
-          else
-            block_size =  256 * (2**(block_size_byte-8))
-          end
-          case (header_bytes[2] & 15)
-          when 12
-            # Sample rate is coded here on 8 bits
-            cursor += 1
-          when 13, 14
-            # Sample rate is coded here on 16 bits
-            cursor += 2
-          end
-          cursor += 1 # CRC
-          # Decode some values needed further
-          nbr_channels = ((header_bytes[3] & 240) >> 4) + 1
-          # Channels encoding side (differences) always have +1 bit per sample
-          bps_inc = nil
-          case nbr_channels
-          when 9, 11
-            bps_inc = [ 0, 1 ]
-          when 10
-            bps_inc = [ 1, 0 ]
-          else
-            bps_inc = [ 0, 0 ]
-          end
-          nbr_channels = 2 if (nbr_channels > 8)
-          nbr_bits_per_sample_frame_header = 0
-          case ((header_bytes[3] & 14) >> 1)
-          when 0
-            nbr_bits_per_sample_frame_header = nbr_bits_per_sample_header
-          when 1
-            nbr_bits_per_sample_frame_header = 8
-          when 2
-            nbr_bits_per_sample_frame_header = 12
-          when 4
-            nbr_bits_per_sample_frame_header = 16
-          when 5
-            nbr_bits_per_sample_frame_header = 20
-          when 6
-            nbr_bits_per_sample_frame_header = 24
-          end
-          log_debug "@#{cursor} - block_size=#{block_size} nbr_channels=#{nbr_channels} nbr_bits_per_sample_frame_header=#{nbr_bits_per_sample_frame_header} bps_inc=#{bps_inc.inspect}"
-          progress(cursor)
-          # Here cursor is on the next byte after the frame header
-          # We have nbr_channels subframes
-          # !!! Starting from here, we have to track bits shifting
-          cursor_bits = 0
-          nbr_channels.times do |idx_channel|
-            nbr_bits_per_sample = nbr_bits_per_sample_frame_header + ((bps_inc[idx_channel] == nil) ? 0 : bps_inc[idx_channel])
-            log_debug "@#{cursor},#{cursor_bits} - Reading Subframe"
-            nbr_encoded_partitions = 0
-            # Decode the sub-frame header
-            sub_header_first_byte, cursor, cursor_bits = decode_bits(cursor, cursor_bits, 8)
-            invalid_data("@#{cursor},#{cursor_bits} - Invalid Sub frame header: #{sub_header_first_byte}") if ((sub_header_first_byte > 127) or
-                                                                                                ((sub_header_first_byte & 124) == 4) or
-                                                                                                ((sub_header_first_byte & 240) == 8) or
-                                                                                                ((sub_header_first_byte & 96) == 32))
-            wasted_bits = 0
-            if (sub_header_first_byte.odd?)
-              wasted_bits, cursor, cursor_bits = decode_unary(cursor, cursor_bits)
-            end
-            log_debug "@#{cursor},#{cursor_bits} - Found #{wasted_bits} wasted bits"
-            cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, wasted_bits)
-            # Now decode the Subframe itself
-            if ((sub_header_first_byte & 126) == 0)
-              # SUBFRAME_CONSTANT
-              log_debug "@#{cursor},#{cursor_bits} - Found Subframe header SUBFRAME_CONSTANT"
-              cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, nbr_bits_per_sample)
-            elsif ((sub_header_first_byte & 126) == 1)
-              # SUBFRAME_VERBATIM
-              log_debug "@#{cursor},#{cursor_bits} - Found Subframe header SUBFRAME_VERBATIM"
-              cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, nbr_bits_per_sample * block_size)
-            elsif ((sub_header_first_byte & 112) == 16)
-              # SUBFRAME_FIXED
-              order = ((sub_header_first_byte & 14) >> 1)
-              invalid_data("@#{cursor},#{cursor_bits} - Invalid SUBFRAME_FIXED") if (order > 4)
-              log_debug "@#{cursor},#{cursor_bits} - Found Subframe header SUBFRAME_FIXED of order #{order}"
-              cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, nbr_bits_per_sample * order)
-              cursor, cursor_bits, nbr_encoded_partitions = decode_residual(cursor, cursor_bits, nbr_bits_per_sample, block_size, order, nbr_encoded_partitions)
+          if ((header_bytes[0] != 255) or
+              ((header_bytes[1] & 254) != 248) or
+              ((header_bytes[2] & 240) == 0) or
+              ((header_bytes[2] & 15) == 15) or
+              (header_bytes[3] >= 176) or
+              ((header_bytes[3] & 14) == 6) or
+              ((header_bytes[3] & 14) == 14) or
+              (header_bytes[3].odd?))
+            if (nbr_frames == 0)
+              invalid_data("@#{cursor} - Incorrect frame header")
             else
-              # SUBFRAME_LPC
-              lpc_order = ((sub_header_first_byte & 62) >> 1) + 1
-              log_debug "@#{cursor},#{cursor_bits} - Found Subframe header SUBFRAME_LPC of order #{lpc_order}"
-              cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, nbr_bits_per_sample * lpc_order)
-              qlpc_precision, cursor, cursor_bits = decode_bits(cursor, cursor_bits, 4)
-              invalid_data("@#{cursor},#{cursor_bits} - Invalid qlpc_precision: #{qlpc_precision}") if (qlpc_precision == 15)
-              qlpc_precision += 1
-              log_debug "@#{cursor},#{cursor_bits} - qlpc_precision=#{qlpc_precision}"
-
-              # DEBUG only
-              # qlpc_shift, cursor, cursor_bits = decode_bits(cursor, cursor_bits, 5)
-              # qlpc_shift = -((qlpc_shift - 1) ^ 31) if ((qlpc_shift & 16) != 0)
-              # log_debug "@#{cursor},#{cursor_bits} - qlpc_shift=#{qlpc_shift}"
-              # lpc_order.times do |idx_coeff|
-              #   coeff, cursor, cursor_bits = decode_bits(cursor, cursor_bits, qlpc_precision)
-              #   # Negative value
-              #   coeff = -((coeff - 1) ^ ((1 << qlpc_precision) - 1)) if ((coeff & (1 << (qlpc_precision-1))) != 0)
-              #   log_debug "@#{cursor},#{cursor_bits} - qlpc_coeff[#{idx_coeff}]=#{coeff}"
-              # end
-              # NON DEBUG only
-              cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, 5)
-              cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, qlpc_precision * lpc_order)
-
-              cursor, cursor_bits, nbr_encoded_partitions = decode_residual(cursor, cursor_bits, nbr_bits_per_sample, block_size, lpc_order, nbr_encoded_partitions)
+              log_debug "@#{cursor} - Incorrect frame header. Consider the file is finished."
+              ending_offset = cursor
             end
+          else
+            utf8_number_size = get_utf8_size(header_bytes[4])
+            invalid_data("@#{cursor} - Incorrect UTF-8 size") if ((header_bytes[1].even?) and (utf8_number_size >= 7))
+            cursor += 4 + utf8_number_size
+            block_size = 0
+            block_size_byte = ((header_bytes[2] & 240) >> 4)
+            log_debug "@#{cursor} - block_size_byte=#{block_size_byte}"
+            case block_size_byte
+            when 1
+              block_size = 192
+            when 2..5
+              block_size = 576 * (2**(block_size_byte-2))
+            when 6
+              # Blocksize is coded here on 8 bits
+              block_size = @data[cursor].ord + 1
+              cursor += 1
+            when 7
+              # Blocksize is coded here on 16 bits
+              block_size = BinData::Uint16be.read(@data[cursor..cursor+1]) + 1
+              cursor += 2
+            else
+              block_size =  256 * (2**(block_size_byte-8))
+            end
+            case (header_bytes[2] & 15)
+            when 12
+              # Sample rate is coded here on 8 bits
+              cursor += 1
+            when 13, 14
+              # Sample rate is coded here on 16 bits
+              cursor += 2
+            end
+            cursor += 1 # CRC
+            # Decode some values needed further
+            nbr_channels = ((header_bytes[3] & 240) >> 4) + 1
+            # Channels encoding side (differences) always have +1 bit per sample
+            bps_inc = nil
+            case nbr_channels
+            when 9, 11
+              bps_inc = [ 0, 1 ]
+            when 10
+              bps_inc = [ 1, 0 ]
+            else
+              bps_inc = [ 0, 0 ]
+            end
+            nbr_channels = 2 if (nbr_channels > 8)
+            nbr_bits_per_sample_frame_header = 0
+            case ((header_bytes[3] & 14) >> 1)
+            when 0
+              nbr_bits_per_sample_frame_header = nbr_bits_per_sample_header
+            when 1
+              nbr_bits_per_sample_frame_header = 8
+            when 2
+              nbr_bits_per_sample_frame_header = 12
+            when 4
+              nbr_bits_per_sample_frame_header = 16
+            when 5
+              nbr_bits_per_sample_frame_header = 20
+            when 6
+              nbr_bits_per_sample_frame_header = 24
+            end
+            log_debug "@#{cursor} - block_size=#{block_size} nbr_channels=#{nbr_channels} nbr_bits_per_sample_frame_header=#{nbr_bits_per_sample_frame_header} bps_inc=#{bps_inc.inspect}"
             progress(cursor)
+            # Here cursor is on the next byte after the frame header
+            # We have nbr_channels subframes
+            # !!! Starting from here, we have to track bits shifting
+            cursor_bits = 0
+            nbr_channels.times do |idx_channel|
+              nbr_bits_per_sample = nbr_bits_per_sample_frame_header + ((bps_inc[idx_channel] == nil) ? 0 : bps_inc[idx_channel])
+              log_debug "@#{cursor},#{cursor_bits} - Reading Subframe"
+              nbr_encoded_partitions = 0
+              # Decode the sub-frame header
+              sub_header_first_byte, cursor, cursor_bits = decode_bits(cursor, cursor_bits, 8)
+              invalid_data("@#{cursor},#{cursor_bits} - Invalid Sub frame header: #{sub_header_first_byte}") if ((sub_header_first_byte > 127) or
+                                                                                                  ((sub_header_first_byte & 124) == 4) or
+                                                                                                  ((sub_header_first_byte & 240) == 8) or
+                                                                                                  ((sub_header_first_byte & 96) == 32))
+              wasted_bits = 0
+              if (sub_header_first_byte.odd?)
+                wasted_bits, cursor, cursor_bits = decode_unary(cursor, cursor_bits)
+              end
+              log_debug "@#{cursor},#{cursor_bits} - Found #{wasted_bits} wasted bits"
+              cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, wasted_bits)
+              # Now decode the Subframe itself
+              if ((sub_header_first_byte & 126) == 0)
+                # SUBFRAME_CONSTANT
+                log_debug "@#{cursor},#{cursor_bits} - Found Subframe header SUBFRAME_CONSTANT"
+                cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, nbr_bits_per_sample)
+              elsif ((sub_header_first_byte & 126) == 1)
+                # SUBFRAME_VERBATIM
+                log_debug "@#{cursor},#{cursor_bits} - Found Subframe header SUBFRAME_VERBATIM"
+                cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, nbr_bits_per_sample * block_size)
+              elsif ((sub_header_first_byte & 112) == 16)
+                # SUBFRAME_FIXED
+                order = ((sub_header_first_byte & 14) >> 1)
+                invalid_data("@#{cursor},#{cursor_bits} - Invalid SUBFRAME_FIXED") if (order > 4)
+                log_debug "@#{cursor},#{cursor_bits} - Found Subframe header SUBFRAME_FIXED of order #{order}"
+                cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, nbr_bits_per_sample * order)
+                cursor, cursor_bits, nbr_encoded_partitions = decode_residual(cursor, cursor_bits, nbr_bits_per_sample, block_size, order, nbr_encoded_partitions)
+              else
+                # SUBFRAME_LPC
+                lpc_order = ((sub_header_first_byte & 62) >> 1) + 1
+                log_debug "@#{cursor},#{cursor_bits} - Found Subframe header SUBFRAME_LPC of order #{lpc_order}"
+                cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, nbr_bits_per_sample * lpc_order)
+                qlpc_precision, cursor, cursor_bits = decode_bits(cursor, cursor_bits, 4)
+                invalid_data("@#{cursor},#{cursor_bits} - Invalid qlpc_precision: #{qlpc_precision}") if (qlpc_precision == 15)
+                qlpc_precision += 1
+                log_debug "@#{cursor},#{cursor_bits} - qlpc_precision=#{qlpc_precision}"
+
+                # DEBUG only
+                # qlpc_shift, cursor, cursor_bits = decode_bits(cursor, cursor_bits, 5)
+                # qlpc_shift = -((qlpc_shift - 1) ^ 31) if ((qlpc_shift & 16) != 0)
+                # log_debug "@#{cursor},#{cursor_bits} - qlpc_shift=#{qlpc_shift}"
+                # lpc_order.times do |idx_coeff|
+                #   coeff, cursor, cursor_bits = decode_bits(cursor, cursor_bits, qlpc_precision)
+                #   # Negative value
+                #   coeff = -((coeff - 1) ^ ((1 << qlpc_precision) - 1)) if ((coeff & (1 << (qlpc_precision-1))) != 0)
+                #   log_debug "@#{cursor},#{cursor_bits} - qlpc_coeff[#{idx_coeff}]=#{coeff}"
+                # end
+                # NON DEBUG only
+                cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, 5)
+                cursor, cursor_bits = inc_cursor_bits(cursor, cursor_bits, qlpc_precision * lpc_order)
+
+                cursor, cursor_bits, nbr_encoded_partitions = decode_residual(cursor, cursor_bits, nbr_bits_per_sample, block_size, lpc_order, nbr_encoded_partitions)
+              end
+              progress(cursor)
+            end
+            # We align back to byte
+            cursor += 1 if (cursor_bits > 0)
+            # Frame footer
+            cursor += 2
+            progress(cursor)
+            nbr_frames += 1
+            ending_offset = cursor if (cursor == @end_offset)
           end
-          # We align back to byte
-          cursor += 1 if (cursor_bits > 0)
-          # Frame footer
-          cursor += 2
-          progress(cursor)
-          ending_offset = cursor if (cursor == @end_offset)
         end
+        metadata(
+          :nbr_frames => nbr_frames
+        )
 
         return ending_offset
       end

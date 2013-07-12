@@ -120,27 +120,31 @@ module FilesHunter
         while (ending_offset == nil)
           size = BinData::Uint32be.read(@data[cursor..cursor+3])
           name = @data[cursor+4..cursor+7]
-          invalid_data("@#{cursor} - Invalid box type: #{name}") if (!ACCEPTABLE_BOX_TYPES.include?(name))
-          if (name == 'ftyp')
-            # Get the extension
-            ftyp_id = @data[cursor+8..cursor+11]
-            log_debug "@#{cursor} - Found ftyp #{ftyp_id}."
-            known_extension = KNOWN_EXTENSIONS[ftyp_id]
-            invalid_data("@#{cursor} - Unknown MP4 ftyp: #{ftyp_id}") if (known_extension == nil)
-            found_relevant_data(known_extension.to_sym)
-            found_ftyp = true
+          if (ACCEPTABLE_BOX_TYPES.include?(name))
+            if (name == 'ftyp')
+              # Get the extension
+              ftyp_id = @data[cursor+8..cursor+11]
+              log_debug "@#{cursor} - Found ftyp #{ftyp_id}."
+              known_extension = KNOWN_EXTENSIONS[ftyp_id]
+              invalid_data("@#{cursor} - Unknown MP4 ftyp: #{ftyp_id}") if (known_extension == nil)
+              found_relevant_data(known_extension.to_sym)
+              found_ftyp = true
+            end
+            log_debug "=== @#{cursor} - Found box #{name} of size #{size}"
+            if (size == 0)
+              # Last box, to the end. Can't handle it
+              invalid_data("@#{cursor} - Can't handle boxes of size 0")
+            elsif (size == 1)
+              size = BinData::Uint64be.read(@data[cursor+8..cursor+15])
+              log_debug "=== @#{cursor} - Real size is #{size}"
+            end
+            cursor += size
+            progress(cursor)
+            ending_offset = cursor if (cursor == @end_offset)
+          else
+            log_debug "@#{cursor} - Invalid box type: #{name}. Consider the file is finished."
+            ending_offset = cursor
           end
-          log_debug "=== @#{cursor} - Found box #{name} of size #{size}"
-          if (size == 0)
-            # Last box, to the end. Can't handle it
-            invalid_data("@#{cursor} - Can't handle boxes of size 0")
-          elsif (size == 1)
-            size = BinData::Uint64be.read(@data[cursor+8..cursor+15])
-            log_debug "=== @#{cursor} - Real size is #{size}"
-          end
-          cursor += size
-          progress(cursor)
-          ending_offset = cursor if (cursor == @end_offset)
         end
         # An MP4 without ftyp is surely a .mov
         found_relevant_data(:mov) if (!found_ftyp)

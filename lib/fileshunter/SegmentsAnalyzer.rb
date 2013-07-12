@@ -94,7 +94,7 @@ module FilesHunter
           [
             'CFBF', # includes Thumbs.db, DOC, XLS, PPT, MSI
             'ASF', # includes WMV
-            'CAB', # includes CAB, MSU
+            'CAB', # includes CAB, MSU, MZZ
             'EXE', # includes DLL, EXE, OCX, OBJ. Cannot detect data concatenated after some EXE files. Detects DRV and SYS as EXE/DLL.
             'MPG_Video', # not generic enough
             'M2V', # not generic enough

@@ -16,3 +16,5 @@ require 'fileshunter'
 # Load test files to execute
 require 'fileshunter/common'
 require 'fileshunter/testcases/sane_files'
+require 'fileshunter/testcases/sane_files_with_garbage'
+require 'fileshunter/testcases/sane_files_duplicated'

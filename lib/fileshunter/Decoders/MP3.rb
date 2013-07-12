@@ -159,7 +159,7 @@ module FilesHunter
               cursor += 32
             end
           else
-            # We might be on a APEv1 tag, or real MP3 data.
+            # We might be on a APEv1 tag, or real MP3 data, or at the end of our file.
             # APEv1 tag occurs only after the last MP3 frame, and before any ID3v1 tag.
             # APEv1 tag has no header, but a footer.
             ape_tag_decoded = false
@@ -187,24 +187,38 @@ module FilesHunter
               rescue InvalidDataError, TruncatedDataError, AccessAfterDataError
                 # Maybe it is not an APEv1 tag.
                 # Scratch it and consider a normal MP3 frame.
-                #log_debug("@#{cursor_begin} - Failed to decode as APEv1 tag: #{$!}")
+                #log_debug("=== @#{cursor_begin} - Failed to decode as APEv1 tag: #{$!}")
                 cursor = cursor_begin
                 ape_tag_decoded = false
               end
             end
             if (!ape_tag_decoded)
-              # Real MP3 data
-              #log_debug "=== @#{cursor} - Found MP3 data"
-              info = decode_mp3_frame_header(cursor)
-              # Go see after
-              cursor += info[:size]
-              # Consider we have valid data only if we have enough milliseconds
-              nbr_ms += info[:nbr_ms]
-              if ((!valid) and (nbr_ms >= MIN_ACCEPTABLE_TIME_MS))
-                valid = true
-                found_relevant_data(:mp3)
+              # Real MP3 data or end of file
+              info = nil
+              begin
+                info = decode_mp3_frame_header(cursor)
+              rescue InvalidDataError
+                if (nbr_ms >= MIN_ACCEPTABLE_TIME_MS)
+                  # Consider the file was finished
+                  #log_debug "=== @#{cursor} - Garbage data found. Should be end of file."
+                  ending_offset = cursor
+                else
+                  # Problem
+                  raise
+                end
               end
-              metadata( :nbr_ms => nbr_ms )
+              if (ending_offset == nil)
+                #log_debug "=== @#{cursor} - Found MP3 data"
+                # Go see after
+                cursor += info[:size]
+                # Consider we have valid data only if we have enough milliseconds
+                nbr_ms += info[:nbr_ms]
+                if ((!valid) and (nbr_ms >= MIN_ACCEPTABLE_TIME_MS))
+                  valid = true
+                  found_relevant_data(:mp3)
+                end
+                metadata( :nbr_ms => nbr_ms )
+              end
             end
           end
           if ((nbr_ms >= MIN_ACCEPTABLE_TIME_MS) and
