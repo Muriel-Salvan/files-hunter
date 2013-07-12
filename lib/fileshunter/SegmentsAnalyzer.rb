@@ -99,7 +99,7 @@ module FilesHunter
             'EBML', # includes MKV, WEBM
             'MP4', # include 3GP, MOV, M4A and many others
             'OGG',
-            'RIFF', # includes AVI, WAV
+            'RIFF', # includes AVI, WAV, ANI
             'FLAC',
             'BMP',
             'ICO', # includes ICO, CUR

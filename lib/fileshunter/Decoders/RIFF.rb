@@ -15,7 +15,8 @@ module FilesHunter
       BEGIN_PATTERN_FILE = Regexp.new("RIF(F|X)", nil, 'n')
       RIFF_TYPES = {
         'WAVE' => :wav,
-        'AVI ' => :avi
+        'AVI ' => :avi,
+        'ACON' => :ani
       }
 
       def get_begin_pattern
