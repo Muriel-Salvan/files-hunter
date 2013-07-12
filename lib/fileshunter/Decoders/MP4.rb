@@ -18,6 +18,7 @@ module FilesHunter
         'wide'
       ]
 
+      # List taken from here: http://www.ftyps.com/
       KNOWN_EXTENSIONS = {
         '3g2a' => '3g2',
         '3g2b' => '3g2',
