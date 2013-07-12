@@ -117,6 +117,7 @@ module FilesHunter
         else
           if (begin_pattern_offset >= @begin_offset + @begin_pattern_offset_in_segment)
             begin_pattern_offset -= @begin_pattern_offset_in_segment
+            log_debug "Found begin_pattern at #{begin_pattern_offset}."
             # We have a candidate
             # Try to decode it
             decoded_end_offset = nil
