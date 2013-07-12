@@ -45,7 +45,7 @@ module FilesHunter
     # Before calling this method, decoded data might still be junk.
     #
     # Parameters::
-    # * *extension* (_Symbol_): Extension this data belongs to
+    # * *extension* (_Symbol_ or <em>list<Symbol></em>): Extension(s) this data belongs to
     def found_relevant_data(extension)
       @extension = extension
     end
