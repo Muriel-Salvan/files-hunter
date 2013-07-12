@@ -5,9 +5,10 @@ module FilesHunter
     class MP3 < BeginPatternDecoder
 
       BEGIN_PATTERN_ID3V1 = 'TAG'.force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_ID3V1E = 'TAG+'.force_encoding('ASCII-8BIT')
       BEGIN_PATTERN_ID3V2 = 'ID3'.force_encoding('ASCII-8BIT')
       BEGIN_PATTERN_APEV2 = 'APETAGEX'.force_encoding('ASCII-8BIT')
-      BEGIN_PATTERN_MP3 = Regexp.new("(\xFF[\xE2-\xFF][\x00-\xEF]|#{BEGIN_PATTERN_ID3V1}|#{BEGIN_PATTERN_ID3V2}|#{BEGIN_PATTERN_APEV2})", nil, 'n')
+      BEGIN_PATTERN_MP3 = Regexp.new("(\xFF[\xE2-\xFF][\x00-\xEF]|#{BEGIN_PATTERN_ID3V1}|#{BEGIN_PATTERN_ID3V1E}|#{BEGIN_PATTERN_ID3V2}|#{BEGIN_PATTERN_APEV2})", nil, 'n')
 
       BITRATE_INDEX = [
         [ 32,  32,  32,  32,  8 ],
@@ -63,17 +64,33 @@ module FilesHunter
           #log_debug "=== @#{cursor} - Reading what's here"
           c_0_2 = @data[cursor..cursor+2]
           if (c_0_2 == BEGIN_PATTERN_ID3V1)
-            # Just met an ID3v1 tag: skip 128 bytes
-            log_debug "=== @#{cursor} - Found ID3v1 tag"
-            metadata( :id3v1_metadata => {
-              :title => @data[cursor+3..cursor+32],
-              :artist => @data[cursor+33..cursor+62],
-              :album => @data[cursor+63..cursor+92],
-              :year => @data[cursor+93..cursor+96],
-              :comments => @data[cursor+97..cursor+126],
-              :genre => @data[cursor+127].ord
-            } )
-            cursor += 128
+            if (@data[cursor..cursor+3] == BEGIN_PATTERN_ID3V1E)
+              log_debug "=== @#{cursor} - Found ID3v1 extended tag"
+              metadata( :id3v1e_metadata => {
+                :title => @data[cursor+4..cursor+63],
+                :artist => @data[cursor+64..cursor+123],
+                :album => @data[cursor+124..cursor+183],
+                :speed => @data[cursor+184].ord,
+                :genre => @data[cursor+185..cursor+214],
+                :start_time => @data[cursor+215..cursor+220],
+                :end_time => @data[cursor+221..cursor+226]
+              } )
+              cursor += 227
+            else
+              # Just met an ID3v1 tag: skip 128 bytes
+              log_debug "=== @#{cursor} - Found ID3v1 tag"
+              metadata( :id3v1_metadata => {
+                :title => @data[cursor+3..cursor+32],
+                :artist => @data[cursor+33..cursor+62],
+                :album => @data[cursor+63..cursor+92],
+                :year => @data[cursor+93..cursor+96],
+                :comments => @data[cursor+97..cursor+126],
+                :genre => @data[cursor+127].ord
+              } )
+              cursor += 128
+              # Current MP3 is finished: id3v1 is forcefully at the end
+              ending_offset = cursor
+            end
           elsif (c_0_2 == BEGIN_PATTERN_ID3V2)
             # Just met an ID3v2 tag
             log_debug "=== @#{cursor} - Found ID3v2 tag"
@@ -275,7 +292,9 @@ module FilesHunter
       def decode_ape_tag_item(cursor)
         value_size = BinData::Uint32le.read(@data[cursor..cursor+3])
         flags = BinData::Uint32le.read(@data[cursor+4..cursor+7])
+        invalid_data("@#{cursor} - Invalid APE tag flags: #{flags}") if ((flags & 0b00011111_11111111_11111111_11111000) != 0)
         cursor_terminator = @data.index(APE_ITEM_KEY_TERMINATOR, cursor+8)
+        invalid_data("@#{cursor} - Could not find the end of APE tag item key.") if (cursor_terminator == nil)
         item_key = @data[cursor+8..cursor_terminator-1]
         cursor = cursor_terminator + 1
         item_value = @data[cursor..cursor+value_size-1]
