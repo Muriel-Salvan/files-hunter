@@ -97,9 +97,9 @@ module FilesHunter
             invalid_data("@#{cursor} - Invalid ID3v2 header") if ((@data[cursor+3].ord == 255) or (@data[cursor+4].ord == 255))
             # Compute the tag's size
             size = 10 # Header
-            @data[cursor+6..cursor+9].bytes.each_with_index do |iByte, iIdx|
-              invalid_data("@#{cursor} - Invalid ID3v2 header in size specification (#{iIdx})") if (iByte >= 128)
-              size += (iByte << ((8*(3-iIdx))-3+iIdx))
+            @data[cursor+6..cursor+9].bytes.each_with_index do |byte, idx|
+              invalid_data("@#{cursor} - Invalid ID3v2 header in size specification (#{idx})") if (byte >= 128)
+              size += (byte << ((8*(3-idx))-3+idx))
             end
             # Is there a footer?
             size += 10 if ((@data[cursor+5].ord & 16) == 16)
