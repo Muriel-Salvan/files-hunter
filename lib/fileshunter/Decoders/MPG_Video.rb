@@ -4,8 +4,8 @@ module FilesHunter
 
     class MPG_Video < BeginPatternDecoder
 
-      BEGIN_PATTERN_MPG = "\x00\x00\x01\xBA\x21\x00\x01\x00\x01\x80".force_encoding('ASCII-8BIT')
-      END_PATTERN_MPG = "\x00\x00\x01\xB7\x00\x00\x01\xB9".force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_MPG = "\x00\x00\x01\xBA\x21\x00\x01\x00\x01\x80".force_encoding(Encoding::ASCII_8BIT)
+      END_PATTERN_MPG = "\x00\x00\x01\xB7\x00\x00\x01\xB9".force_encoding(Encoding::ASCII_8BIT)
 
       def get_begin_pattern
         return BEGIN_PATTERN_MPG, { :offset_inc => 10 }

@@ -4,11 +4,11 @@ module FilesHunter
 
     class CAB < BeginPatternDecoder
 
-      BEGIN_PATTERN_CAB = "MSCF\x00\x00\x00\x00".force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_CAB = "MSCF\x00\x00\x00\x00".force_encoding(Encoding::ASCII_8BIT)
 
-      END_STRING_TERMINATOR = "\x00".force_encoding('ASCII-8BIT')
+      END_STRING_TERMINATOR = "\x00".force_encoding(Encoding::ASCII_8BIT)
 
-      AUTHENTICODE_ID = "\x30\x82".force_encoding('ASCII-8BIT')
+      AUTHENTICODE_ID = "\x30\x82".force_encoding(Encoding::ASCII_8BIT)
 
       def get_begin_pattern
         return BEGIN_PATTERN_CAB, { :offset_inc => 4 }
@@ -122,7 +122,12 @@ module FilesHunter
           # Read the size
           authenticode_size = BinData::Uint16be.read(@data[cursor+2..cursor+3])
           log_debug "@#{cursor} - Found authenticode data of size #{authenticode_size}"
-          cursor += 8 + authenticode_size
+          cursor += 4 + authenticode_size
+          # Eat eventually up to 4 "\x00" bytes
+          while ((cursor < @end_offset) and
+                 (@data[cursor] == "\x00"))
+            cursor += 1
+          end
         end
 
         return cursor

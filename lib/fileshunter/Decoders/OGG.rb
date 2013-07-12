@@ -4,12 +4,12 @@ module FilesHunter
 
     class OGG < BeginPatternDecoder
 
-      BEGIN_PATTERN_OGG = "OggS\x00".force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_OGG = "OggS\x00".force_encoding(Encoding::ASCII_8BIT)
 
       # Sorted by the least dominating extension first
       KNOWN_EXTENSIONS = {
-        'vorbis'.force_encoding('ASCII-8BIT') => :oga,
-        'theora'.force_encoding('ASCII-8BIT') => :ogv
+        'vorbis'.force_encoding(Encoding::ASCII_8BIT) => :oga,
+        'theora'.force_encoding(Encoding::ASCII_8BIT) => :ogv
       }
 
       def get_begin_pattern

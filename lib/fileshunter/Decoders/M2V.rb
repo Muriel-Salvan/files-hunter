@@ -4,8 +4,8 @@ module FilesHunter
 
     class M2V < BeginPatternDecoder
 
-      BEGIN_PATTERN_M2V = "\x00\x00\x01\xBA\x44\x00\x04\x00\x14\x01".force_encoding('ASCII-8BIT')
-      END_PATTERN_M2V = "\x00\x00\x01\xB9".force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_M2V = "\x00\x00\x01\xBA\x44\x00\x04\x00\x14\x01".force_encoding(Encoding::ASCII_8BIT)
+      END_PATTERN_M2V = "\x00\x00\x01\xB9".force_encoding(Encoding::ASCII_8BIT)
 
       def get_begin_pattern
         return BEGIN_PATTERN_M2V, { :offset_inc => 10 }

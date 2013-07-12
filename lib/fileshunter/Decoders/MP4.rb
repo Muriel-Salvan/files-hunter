@@ -4,9 +4,9 @@ module FilesHunter
 
     class MP4 < BeginPatternDecoder
 
-      BEGIN_PATTERN_MOV_1 = 'pnot'.force_encoding('ASCII-8BIT')
-      BEGIN_PATTERN_MOV_2 = 'mdat'.force_encoding('ASCII-8BIT')
-      BEGIN_PATTERN_MOV_3 = 'moov'.force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_MOV_1 = 'pnot'.force_encoding(Encoding::ASCII_8BIT)
+      BEGIN_PATTERN_MOV_2 = 'mdat'.force_encoding(Encoding::ASCII_8BIT)
+      BEGIN_PATTERN_MOV_3 = 'moov'.force_encoding(Encoding::ASCII_8BIT)
       BEGIN_PATTERN_MP4 = Regexp.new("(ftyp|#{BEGIN_PATTERN_MOV_1}|#{BEGIN_PATTERN_MOV_2}|#{BEGIN_PATTERN_MOV_3})", nil, 'n')
       ACCEPTABLE_BOX_TYPES = [
         'free',

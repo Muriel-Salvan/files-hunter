@@ -6,7 +6,7 @@ module FilesHunter
 
     class FLAC < BeginPatternDecoder
 
-      BEGIN_PATTERN_FLAC = 'fLaC'.force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_FLAC = 'fLaC'.force_encoding(Encoding::ASCII_8BIT)
 
       def get_begin_pattern
         return BEGIN_PATTERN_FLAC, { :offset_inc => 4 }

@@ -4,9 +4,9 @@ module FilesHunter
 
     class RIFF < BeginPatternDecoder
 
-      BEGIN_PATTERN_RIFF = 'RIFF'.force_encoding('ASCII-8BIT')
-      BEGIN_PATTERN_RIFX = 'RIFX'.force_encoding('ASCII-8BIT')
-      BEGIN_PATTERN_JUNK = 'JUNK'.force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_RIFF = 'RIFF'.force_encoding(Encoding::ASCII_8BIT)
+      BEGIN_PATTERN_RIFX = 'RIFX'.force_encoding(Encoding::ASCII_8BIT)
+      BEGIN_PATTERN_JUNK = 'JUNK'.force_encoding(Encoding::ASCII_8BIT)
       ACCEPTABLE_RIFF = [
         BEGIN_PATTERN_RIFF,
         BEGIN_PATTERN_RIFX,

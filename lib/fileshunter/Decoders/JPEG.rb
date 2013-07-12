@@ -22,10 +22,10 @@ module FilesHunter
         "\xD7",
         "\xFF"
       ]
-      MARKERS_IGNORED_IN_ENTROPY_DATA_REGEXP = Regexp.new("\xFF[^#{MARKERS_IGNORED_IN_ENTROPY_DATA.join}]".force_encoding('ASCII-8BIT'))
+      MARKERS_IGNORED_IN_ENTROPY_DATA_REGEXP = Regexp.new("\xFF[^#{MARKERS_IGNORED_IN_ENTROPY_DATA.join}]".force_encoding(Encoding::ASCII_8BIT))
 
       def get_begin_pattern
-        return "\xFF\xD8\xFF".force_encoding('ASCII-8BIT')
+        return "\xFF\xD8\xFF".force_encoding(Encoding::ASCII_8BIT)
       end
 
       def decode(offset)

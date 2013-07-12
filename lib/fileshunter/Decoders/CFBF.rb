@@ -4,14 +4,14 @@ module FilesHunter
 
     class CFBF < BeginPatternDecoder
 
-      BEGIN_PATTERN_CFBF = "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00".force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_CFBF = "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00".force_encoding(Encoding::ASCII_8BIT)
 
       KNOWN_EXTENSIONS = {
-        'MSWordDoc'.force_encoding('ASCII-8BIT') => :doc,
-        "P\x00o\x00w\x00e\x00r\x00P\x00o\x00i\x00n\x00t\x00".force_encoding('ASCII-8BIT') => :pps,
-        'Microsoft Excel'.force_encoding('ASCII-8BIT') => :xls,
-        "C\x00a\x00t\x00a\x00l\x00o\x00g\x00".force_encoding('ASCII-8BIT') => :db,
-        'Install,MSI,Framework'.force_encoding('ASCII-8BIT') => :msi
+        'MSWordDoc'.force_encoding(Encoding::ASCII_8BIT) => :doc,
+        "P\x00o\x00w\x00e\x00r\x00P\x00o\x00i\x00n\x00t\x00".force_encoding(Encoding::ASCII_8BIT) => :pps,
+        'Microsoft Excel'.force_encoding(Encoding::ASCII_8BIT) => :xls,
+        "C\x00a\x00t\x00a\x00l\x00o\x00g\x00".force_encoding(Encoding::ASCII_8BIT) => :db,
+        'Install,MSI,Framework'.force_encoding(Encoding::ASCII_8BIT) => :msi
       }
 
       def get_begin_pattern

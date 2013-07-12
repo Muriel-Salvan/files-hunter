@@ -4,9 +4,9 @@ module FilesHunter
 
     class EBML < BeginPatternDecoder
 
-      BEGIN_PATTERN_MKV = "\x1A\x45\xDF\xA3".force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_MKV = "\x1A\x45\xDF\xA3".force_encoding(Encoding::ASCII_8BIT)
       DOCTYPE_ID_INT = 642
-      SEGMENT_MATROSKA_ID = "\x18\x53\x80\x67".force_encoding('ASCII-8BIT')
+      SEGMENT_MATROSKA_ID = "\x18\x53\x80\x67".force_encoding(Encoding::ASCII_8BIT)
       ACCEPTABLE_DOCTYPES = {
         'matroska' => :mkv,
         'webm' => :webm

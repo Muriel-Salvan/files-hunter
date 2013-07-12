@@ -4,10 +4,10 @@ module FilesHunter
 
     class MP3 < BeginPatternDecoder
 
-      BEGIN_PATTERN_ID3V1 = 'TAG'.force_encoding('ASCII-8BIT')
-      BEGIN_PATTERN_ID3V1E = 'TAG+'.force_encoding('ASCII-8BIT')
-      BEGIN_PATTERN_ID3V2 = 'ID3'.force_encoding('ASCII-8BIT')
-      BEGIN_PATTERN_APEV2 = 'APETAGEX'.force_encoding('ASCII-8BIT')
+      BEGIN_PATTERN_ID3V1 = 'TAG'.force_encoding(Encoding::ASCII_8BIT)
+      BEGIN_PATTERN_ID3V1E = 'TAG+'.force_encoding(Encoding::ASCII_8BIT)
+      BEGIN_PATTERN_ID3V2 = 'ID3'.force_encoding(Encoding::ASCII_8BIT)
+      BEGIN_PATTERN_APEV2 = 'APETAGEX'.force_encoding(Encoding::ASCII_8BIT)
       BEGIN_PATTERN_MP3 = Regexp.new("(\xFF[\xE2-\xFF][\x00-\xEF]|#{BEGIN_PATTERN_ID3V1}|#{BEGIN_PATTERN_ID3V1E}|#{BEGIN_PATTERN_ID3V2}|#{BEGIN_PATTERN_APEV2})", nil, 'n')
 
       BITRATE_INDEX = [
@@ -34,9 +34,9 @@ module FilesHunter
 
       MIN_ACCEPTABLE_TIME_MS = 1000
 
-      APE_ITEM_KEY_TERMINATOR = "\x00".force_encoding('ASCII-8BIT')
+      APE_ITEM_KEY_TERMINATOR = "\x00".force_encoding(Encoding::ASCII_8BIT)
 
-      ID3V2_PADDING_CHAR = "\x00".force_encoding('ASCII-8BIT')
+      ID3V2_PADDING_CHAR = "\x00".force_encoding(Encoding::ASCII_8BIT)
 
       def get_begin_pattern
         return BEGIN_PATTERN_MP3, { :max_regexp_size => 8 }
