@@ -19,12 +19,12 @@ module IOBlockReader
     alias_method :old_squares, :[]
     def [](range)
       if (range.is_a?(Range))
-        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range}") if (range.last >= @end_offset)
-        raise FilesHunter::AccessBeforeDataError.new("Index out of range: #{range}") if (range.first < @begin_offset)
+        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range} (>= #{@end_offset})") if (range.last >= @end_offset)
+        raise FilesHunter::AccessBeforeDataError.new("Index out of range: #{range} (< #{@begin_offset})") if (range.first < @begin_offset)
         result = self.old_squares(range)
       else
-        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range}") if (range >= @end_offset)
-        raise FilesHunter::AccessBeforeDataError.new("Index out of range: #{range}") if (range < @begin_offset)
+        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range} (>= #{@end_offset})") if (range >= @end_offset)
+        raise FilesHunter::AccessBeforeDataError.new("Index out of range: #{range} (< #{@begin_offset})") if (range < @begin_offset)
         result = self.old_squares(range)
       end
       return result

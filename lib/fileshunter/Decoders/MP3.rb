@@ -8,7 +8,7 @@ module FilesHunter
       BEGIN_PATTERN_ID3V1E = 'TAG+'.force_encoding(Encoding::ASCII_8BIT)
       BEGIN_PATTERN_ID3V2 = 'ID3'.force_encoding(Encoding::ASCII_8BIT)
       BEGIN_PATTERN_APEV2 = 'APETAGEX'.force_encoding(Encoding::ASCII_8BIT)
-      BEGIN_PATTERN_MP3 = Regexp.new("(\xFF[\xE2-\xFF][\x00-\xEF]|#{BEGIN_PATTERN_ID3V1}|#{BEGIN_PATTERN_ID3V1E}|#{BEGIN_PATTERN_ID3V2}|#{BEGIN_PATTERN_APEV2})", nil, 'n')
+      BEGIN_PATTERN_MP3 = Regexp.new("(\xFF[\xE2-\xFF][\x00-\xEF]|#{BEGIN_PATTERN_ID3V2}|#{BEGIN_PATTERN_APEV2})", nil, 'n')
 
       BITRATE_INDEX = [
         [ 32,  32,  32,  32,  8 ],
@@ -270,7 +270,7 @@ module FilesHunter
         # Compute the size
         info[:size] = (layer == 1) ? ((12 * bit_rate) / sample_rate + padding) * 4 : (144 * bit_rate) / sample_rate + padding
         info[:nbr_ms] = ((layer == 1) ? 384000 : 1152000) / sample_rate
-        log_debug "=== @#{cursor} - Read MP3: Version=#{version} Layer=#{layer} BitRate=#{bit_rate} SampleRate=#{sample_rate} Padding=#{padding} FrameLength=#{info[:size]} Milliseconds=#{info[:nbr_ms]}"
+        #log_debug "=== @#{cursor} - Read MP3 frame: Version=#{version} Layer=#{layer} BitRate=#{bit_rate} SampleRate=#{sample_rate} Padding=#{padding} FrameLength=#{info[:size]} Milliseconds=#{info[:nbr_ms]}"
         return info
       end
 

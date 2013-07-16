@@ -136,6 +136,7 @@ module FilesHunter
             rescue InvalidDataError
               # If data was already validated, it means that the segment is truncated.
               log_debug "Got an invalid data exception while decoding data: #{$!}"
+              log_debug $!.backtrace.join("\n")
               # If not, drop everything.
               if ((@extension != nil) and
                   (@last_offset_to_be_decoded != nil))
@@ -148,6 +149,7 @@ module FilesHunter
             rescue TruncatedDataError, AccessAfterDataError
               # Data is truncated
               log_debug "Got a truncation exception while decoding data: #{$!}"
+              log_debug $!.backtrace.join("\n")
               # If we already got relevant data, mark it as truncated
               if (@extension != nil)
                 truncated = true
@@ -160,12 +162,13 @@ module FilesHunter
               #decoded_end_offset = nil
               raise
             end
-            log_debug "Decoded segment in offsets [ #{begin_pattern_offset} - #{decoded_end_offset} ]" if (decoded_end_offset != nil)
-            if (decoded_end_offset == nil)
-              log_debug "Invalid segment."
+            if ((decoded_end_offset == nil) or
+                (@extension == nil))
+              log_debug 'Invalid segment.'
               # Try searching from further: maybe another BEGIN_PATTERN might be found
               current_offset = begin_pattern_offset + @begin_pattern_offset_in_segment + @offset_inc
             else
+              log_debug "Decoded segment in offsets [ #{begin_pattern_offset} - #{decoded_end_offset} ]"
               if (decoded_end_offset > @end_offset)
                 log_debug "Decoded segment ends at #{decoded_end_offset} which is greater than #{@end_offset} => truncated"
                 decoded_end_offset = @end_offset

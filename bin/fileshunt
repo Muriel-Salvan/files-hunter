@@ -154,7 +154,7 @@ module FilesHunter
           if (@extract and
               (segments.size > 1))
             File.open(file_name, 'rb') do |file|
-              content = IOBlockReader.init(file, :block_size => 128*1048576)
+              content = IOBlockReader.init(file, :block_size => 64*1048576)
               segments.each_with_index do |segment, segment_idx|
                 write_segment(content, segment_idx, segment, file_name)
               end
