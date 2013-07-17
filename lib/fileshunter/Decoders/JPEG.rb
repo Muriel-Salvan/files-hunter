@@ -98,9 +98,25 @@ module FilesHunter
               case @data[cursor+4..cursor+9]
               when "Exif\x00\x00"
                 # Read a TIFF file from cursor+10
-                metadata( :exif_metadata => {
-
-                } )
+                require 'fileshunter/Decoders/TIFF'
+                invalid_data("@#{cursor} - Invalid TIFF header") if (@data[cursor+10..cursor+13].index(FilesHunter::Decoders::TIFF::BEGIN_PATTERN_TIFF) != 0)
+                tiff_decoder = FilesHunter::Decoders::TIFF.new
+                tiff_decoder.setup(FilesHunter::get_segments_analyzer, @data, cursor+10, cursor+2+size)
+                tiff_decoder.accept_no_image_data
+                begin
+                  tiff_decoder.find_segments
+                rescue InvalidDataError, TruncatedDataError, AccessAfterDataError
+                  # Invalid TIFF data
+                  invalid_data("@#{cursor} - Invalid TIFF data: #{$!}")
+                end
+                segments = tiff_decoder.segments_found
+                invalid_data("@#{cursor} - No valid TIFF segment found for Exif") if segments.empty?
+                invalid_data("@#{cursor} - Not a valid TIFF segment found for Exif. Found #{segments[0].extensions.inspect}.") if (!segments[0].extensions.include?(:tif))
+                invalid_data("@#{cursor} - Truncated TIFF segment found for Exif.") if (segments[0].truncated)
+                invalid_data("@#{cursor} - TIFF segment (@#{segments[0].begin_offset}) not found at the beginning of Exif (#{cursor+10}).") if (segments[0].begin_offset != cursor+10)
+                #invalid_data("@#{cursor} - TIFF segment not ending (#{segments[0].end_offset}) at the end of Exif (#{cursor+2+size}).") if (segments[0].end_offset != cursor+2+size)
+                metadata( :exif_metadata => segments[0].metadata )
+                found_relevant_data([:jpg, :thm])
               end
             end
             # Does it have entropy data?

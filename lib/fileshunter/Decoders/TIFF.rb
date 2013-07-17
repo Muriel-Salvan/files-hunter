@@ -4,7 +4,8 @@ module FilesHunter
 
     class TIFF < BeginPatternDecoder
 
-      # Reference: http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
+      # TIFF Reference: http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
+      # Exif Reference: http://www.exif.org/Exif2-2.PDF
 
       BEGIN_PATTERN_TIFF_LE = "II*\x00".force_encoding(Encoding::ASCII_8BIT)
       BEGIN_PATTERN_TIFF_BE = "MM\x00*".force_encoding(Encoding::ASCII_8BIT)
@@ -28,8 +29,22 @@ module FilesHunter
       VALID_COMPRESSION_VALUES = [ 1, 2, 3, 4, 5, 6, 32773 ]
       VALID_PHOTOMETRIC_INTERPRETATIONS = [ 0, 1, 2, 3, 4, 5, 6, 8 ]
 
+      TRAILING_00_REGEXP = Regexp.new("\x00*$".force_encoding(Encoding::ASCII_8BIT), nil, 'n')
+      NULL_TERMINATING_CHAR = "\x00".force_encoding(Encoding::ASCII_8BIT)
+
+      def initialize
+        super
+        @accept_no_image_data = false
+      end
+
       def get_begin_pattern
         return BEGIN_PATTERN_TIFF, { :offset_inc => 4, :max_regexp_size => 4 }
+      end
+
+      # Set this decoder to accept no image data.
+      # This is particularly useful for other decoders using it (for example with JPEG and its Exif info)
+      def accept_no_image_data
+        @accept_no_image_data = true
       end
 
       def decode(offset)
@@ -53,8 +68,20 @@ module FilesHunter
         @lst_bits_per_sample = [1]
         @image_width = nil
         @image_length = nil
-        parse_ifd(ifd_offset) do |tag, type, nbr, size, cursor|
+        @tag_parser = Proc.new do |tag, type, nbr, size, cursor|
           case tag
+          when 2
+            metadata( :gps_latitude => @data[cursor..cursor+size-1] )
+          when 4
+            metadata( :gps_longitude => @data[cursor..cursor+size-1] )
+          when 6
+            metadata( :gps_altitude => @data[cursor..cursor+size-1] )
+          when 7
+            metadata( :gps_timestamp => [
+              read_ratio(cursor),
+              read_ratio(cursor+8),
+              read_ratio(cursor+16),
+            ] )
           when 256
             @image_width = ((type == 3) ? @bindata_reader_16.read(@data[cursor..cursor+1]) : @bindata_reader_32.read(@data[cursor..cursor+3]))
             invalid_data("@#{cursor} - Invalid image width #{@image_width}") if (@image_width == 0)
@@ -90,13 +117,13 @@ module FilesHunter
             invalid_data("@#{cursor} - Invalid fill order #{fill_order}") if ((fill_order == 0) or (fill_order > 2))
             metadata( :fill_order => fill_order )
           when 269
-            metadata( :document_name => @data[cursor..cursor+size-2] )
+            metadata( :document_name => read_ascii(cursor, size) )
           when 270
-            metadata( :image_description => @data[cursor..cursor+size-2] )
+            metadata( :image_description => read_ascii(cursor, size) )
           when 271
-            metadata( :make => @data[cursor..cursor+size-2] )
+            metadata( :make => read_ascii(cursor, size) )
           when 272
-            metadata( :model => @data[cursor..cursor+size-2] )
+            metadata( :model => read_ascii(cursor, size) )
           when 273
             value_size = ((type == 3) ? 2 : 4)
             nbr.times do |idx|
@@ -121,17 +148,15 @@ module FilesHunter
               @strip_byte_counts << ((type == 3) ? @bindata_reader_16.read(@data[cursor+idx*value_size..cursor+idx*value_size+1]) : @bindata_reader_32.read(@data[cursor+idx*value_size..cursor+idx*value_size+3]))
             end
           when 282
-            x_resolution_num = @bindata_reader_32.read(@data[cursor..cursor+3])
-            x_resolution_denom = @bindata_reader_32.read(@data[cursor+4..cursor+7])
-            invalid_data("@#{cursor} - Invalid x resolution #{x_resolution_num}/#{x_resolution_denom}") if ((x_resolution_denom == 0) or (x_resolution_num == 0))
-            metadata( :x_resolution_num => x_resolution_num, :x_resolution_denom => x_resolution_denom )
+            ratio = read_ratio(cursor)
+            invalid_data("@#{cursor} - Invalid x resolution #{ratio}") if (ratio == 0)
+            metadata( :x_resolution => ratio )
           when 283
-            y_resolution_num = @bindata_reader_32.read(@data[cursor..cursor+3])
-            y_resolution_denom = @bindata_reader_32.read(@data[cursor+4..cursor+7])
-            invalid_data("@#{cursor} - Invalid y resolution #{y_resolution_num}/#{y_resolution_denom}") if ((y_resolution_denom == 0) or (y_resolution_num == 0))
-            metadata( :y_resolution_num => y_resolution_num, :y_resolution_denom => y_resolution_denom )
+            ratio = read_ratio(cursor)
+            invalid_data("@#{cursor} - Invalid y resolution #{ratio}") if (ratio == 0)
+            metadata( :y_resolution => ratio )
           when 285
-            metadata( :page_name => @data[cursor..cursor+size-2] )
+            metadata( :page_name => read_ascii(cursor, size) )
           when 296
             resolution_unit = @bindata_reader_16.read(@data[cursor..cursor+1])
             invalid_data("@#{cursor} - Invalid resolution unit #{resolution_unit}") if ((resolution_unit == 0) or (resolution_unit > 3))
@@ -142,13 +167,13 @@ module FilesHunter
             invalid_data("@#{cursor} - Invalid page total #{page_total}") if (page_total == 0)
             metadata( :page_number => page_number, :page_total => page_total )
           when 305
-            metadata( :software => @data[cursor..cursor+size-2] )
+            metadata( :software => read_ascii(cursor, size) )
           when 306
-            metadata( :date_time => @data[cursor..cursor+size-2] )
+            metadata( :date_time => read_ascii(cursor, size) )
           when 315
-            metadata( :artist => @data[cursor..cursor+size-2] )
+            metadata( :artist => read_ascii(cursor, size) )
           when 316
-            metadata( :host_computer => @data[cursor..cursor+size-2] )
+            metadata( :host_computer => read_ascii(cursor, size) )
           when 324
             nbr.times do |idx|
               @tile_offsets << @bindata_reader_32.read(@data[cursor+idx*4..cursor+idx*4+3])
@@ -159,12 +184,53 @@ module FilesHunter
               @tile_byte_counts << @bindata_reader_32.read(@data[cursor+idx*4..cursor+idx*4+3])
             end
           when 337
-            metadata( :target_printer => @data[cursor..cursor+size-2] )
+            metadata( :target_printer => read_ascii(cursor, size) )
           when 33432
-            metadata( :copyright => @data[cursor..cursor+size-2] )
+            metadata( :copyright => read_ascii(cursor, size) )
+          when 33434
+            metadata( :exposure_time => read_ratio(cursor) )
+          when 33437
+            metadata( :f_number => read_ratio(cursor) )
+          when 34665
+            exif_ifd_offset = @bindata_reader_32.read(@data[cursor..cursor+3])
+            metadata( :exif_ifd => true )
+            parse_ifd(exif_ifd_offset, &@tag_parser)
+          when 34853
+            gps_ifd_offset = @bindata_reader_32.read(@data[cursor..cursor+3])
+            metadata( :gps_ifd => true )
+            parse_ifd(gps_ifd_offset, &@tag_parser)
+          when 36864
+            metadata( :exif_version => read_ascii(cursor, size) )
+          when 36867
+            metadata( :date_time_original => read_ascii(cursor, size) )
+          when 36868
+            metadata( :date_time_digitized => read_ascii(cursor, size) )
+          when 37386
+            metadata( :focal_length => read_ratio(cursor) )
+          when 37510
+            metadata( :user_comment => read_ascii(cursor, size) )
+          when 37520
+            metadata( :subsec_time => read_ascii(cursor, size) )
+          when 37521
+            metadata( :subsec_time_original => read_ascii(cursor, size) )
+          when 37522
+            metadata( :subsec_time_digitized => read_ascii(cursor, size) )
+          when 40960
+            metadata( :flashpix_version => read_ascii(cursor, size) )
+          when 40962
+            metadata( :pixel_x_dimension => ((type == 3) ? @bindata_reader_16.read(@data[cursor..cursor+1]) : @bindata_reader_32.read(@data[cursor..cursor+3])) )
+          when 40963
+            metadata( :pixel_y_dimension => ((type == 3) ? @bindata_reader_16.read(@data[cursor..cursor+1]) : @bindata_reader_32.read(@data[cursor..cursor+3])) )
+          when 40965
+            interoperability_ifd_offset = @bindata_reader_32.read(@data[cursor..cursor+3])
+            metadata( :interoperability_ifd => true )
+            parse_ifd(interoperability_ifd_offset, &@tag_parser)
           end
         end
-        log_debug "@#{@max_end_offset} - Found #{@strip_offsets.size} strips and #{@tile_offsets.size} tiles."
+        parse_ifd(ifd_offset, &@tag_parser)
+        log_debug "@#{@file_offset + @max_end_offset} - Found #{@strip_offsets.size} strips and #{@tile_offsets.size} tiles."
+        found_relevant_data([:tif, :tiff])
+        invalid_data("@#{@file_offset + @max_end_offset} - No strips nor tiles defined.") if ((!@accept_no_image_data) and (@strip_offsets.empty?) and (@tile_offsets.empty?))
         # Special case:
         if ((@strip_offsets.size == 1) and
             (@strip_byte_counts.empty?))
@@ -248,6 +314,31 @@ module FilesHunter
           # Read the next ifd offset
           ifd_offset = @bindata_reader_32.read(@data[cursor..cursor+3])
         end
+      end
+
+      # Read an ASCII value
+      #
+      # Parameters::
+      # * *cursor* (_Fixnum_): The cursor to read from
+      # * *size* (_Fixnum_): Size of the string
+      # Result::
+      # * _String_ or <em>list<String></em>: Resulting string or list of strings if several.
+      def read_ascii(cursor, size)
+        lst_strings = @data[cursor..cursor+size-1].gsub(TRAILING_00_REGEXP, '').strip.split(NULL_TERMINATING_CHAR)
+        return (lst_strings.size == 1) ? lst_strings[0] : lst_strings
+      end
+
+      # Read a Rational value
+      #
+      # Parameters::
+      # * *cursor* (_Fixnum_): The cursor to read from
+      # Result::
+      # * _Float_: The rational
+      def read_ratio(cursor)
+        num = @bindata_reader_32.read(@data[cursor..cursor+3])
+        denom = @bindata_reader_32.read(@data[cursor+4..cursor+7])
+        invalid_data("@#{cursor} - Invalid rational #{num}/#{denom}") if ((denom == 0) and (num != 0))
+        return (num == 0) ? 0 : num.to_f / denom.to_f
       end
 
     end

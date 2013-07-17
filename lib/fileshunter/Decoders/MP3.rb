@@ -173,7 +173,7 @@ module FilesHunter
                   item_key, item_value, cursor = decode_ape_tag_item(cursor)
                   ape_metadata[item_key] = item_value
                   nbr_items += 1
-                  log_debug "=== @#{cursor} - Decoded APEv1 tag item: #{item_key} => #{item_value}"
+                  log_debug "=== @#{cursor} - Decoded APEv1 tag item: #{item_key.inspect} => #{item_value[0..31].inspect}"
                 end
                 # Here we are on an APE Tag footer
                 footer_info = decode_ape_tag_header(cursor)
@@ -309,6 +309,7 @@ module FilesHunter
         invalid_data("@#{cursor} - Invalid APE tag flags: #{flags}") if ((flags & 0b00011111_11111111_11111111_11111000) != 0)
         cursor_terminator = @data.index(APE_ITEM_KEY_TERMINATOR, cursor+8)
         invalid_data("@#{cursor} - Could not find the end of APE tag item key.") if (cursor_terminator == nil)
+        invalid_data("@#{cursor} - Empty APE tag item key.") if (cursor_terminator == cursor+8)
         item_key = @data[cursor+8..cursor_terminator-1]
         cursor = cursor_terminator + 1
         item_value = @data[cursor..cursor+value_size-1]
