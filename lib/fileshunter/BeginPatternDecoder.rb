@@ -22,6 +22,7 @@ module FilesHunter
     # Find segments from a given data
     def find_segments
       @begin_pattern, options = get_begin_pattern
+      log_debug "Pattern to find: #{@begin_pattern.inspect}"
       @has_to_check_begin_pattern = self.respond_to?(:check_begin_pattern)
       # Parse options
       @max_regexp_size = 32
@@ -136,7 +137,7 @@ module FilesHunter
             rescue InvalidDataError
               # If data was already validated, it means that the segment is truncated.
               log_debug "Got an invalid data exception while decoding data: #{$!}"
-              log_debug $!.backtrace.join("\n")
+              #log_debug $!.backtrace.join("\n")
               # If not, drop everything.
               if ((@extension != nil) and
                   (@last_offset_to_be_decoded != nil))
@@ -149,7 +150,7 @@ module FilesHunter
             rescue TruncatedDataError, AccessAfterDataError
               # Data is truncated
               log_debug "Got a truncation exception while decoding data: #{$!}"
-              log_debug $!.backtrace.join("\n")
+              #log_debug $!.backtrace.join("\n")
               # If we already got relevant data, mark it as truncated
               if (@extension != nil)
                 truncated = true

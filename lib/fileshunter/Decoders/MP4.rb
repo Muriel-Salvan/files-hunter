@@ -418,7 +418,7 @@ module FilesHunter
       }
 
       def get_begin_pattern
-        return BEGIN_PATTERN_MP4, { :begin_pattern_offset_in_segment => 4, :offset_inc => 4 }
+        return BEGIN_PATTERN_MP4, { :begin_pattern_offset_in_segment => 4, :offset_inc => 4, :max_regexp_size => 4 }
       end
 
       def decode(offset)

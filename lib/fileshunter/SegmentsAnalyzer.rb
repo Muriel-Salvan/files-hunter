@@ -106,7 +106,8 @@ module FilesHunter
             'BMP',
             'ICO', # includes ICO, CUR
             'Text', # includes TXT, SRT, RTF (both ASCII-8BIT and UTF-16)
-            'JPEG',
+            'JPEG', # includes JPG, THM
+            'TIFF',
             'MP3'
           ].each do |decoder_name|
             @plugins.access_plugin(:Decoders, decoder_name) do |decoder|
