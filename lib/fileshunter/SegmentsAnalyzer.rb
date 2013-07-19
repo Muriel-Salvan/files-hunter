@@ -86,7 +86,7 @@ module FilesHunter
         @nbr_bytes = File.size(file_name)
         @nbr_bytes_decoded = 0
         log_debug "File size: #{@nbr_bytes}"
-        segments << Segment.new(0, @nbr_bytes, :unknown, false, {})
+        segments << Segment.new(0, @nbr_bytes, :unknown, false, false, {})
 
         begin
           # Get decoders in a given order
@@ -186,17 +186,17 @@ module FilesHunter
         if (segment.extensions == [:unknown])
           log_debug "Try to find segments in #{segment.begin_offset}..#{segment.end_offset}"
           decoded_segments = yield(segment.begin_offset, segment.end_offset)
-          log_debug "Decoded #{decoded_segments.size} new segments: #{decoded_segments.map { |decoded_segment| "[#{decoded_segment.extensions.join(',')}#{decoded_segment.truncated ? '(truncated)' : ''}:#{decoded_segment.begin_offset}..#{decoded_segment.end_offset}]" }}"
+          log_debug "Decoded #{decoded_segments.size} new segments: #{decoded_segments.map { |decoded_segment| "[#{decoded_segment.extensions.join(',')}#{decoded_segment.truncated ? '(truncated)' : ''}#{decoded_segment.missing_previous_data ? '(missing previous data)' : ''}:#{decoded_segment.begin_offset}..#{decoded_segment.end_offset}]" }}"
           if (decoded_segments.empty?)
             splitted_segments << segment
           else
             last_written_offset = segment.begin_offset
             decoded_segments.each do |decoded_segment|
-              splitted_segments << Segment.new(last_written_offset, decoded_segment.begin_offset, :unknown, false, {}) if (decoded_segment.begin_offset > last_written_offset)
+              splitted_segments << Segment.new(last_written_offset, decoded_segment.begin_offset, :unknown, false, false, {}) if (decoded_segment.begin_offset > last_written_offset)
               splitted_segments << decoded_segment
               last_written_offset = decoded_segment.end_offset
             end
-            splitted_segments << Segment.new(last_written_offset, segment.end_offset, :unknown, false, {}) if (segment.end_offset > last_written_offset)
+            splitted_segments << Segment.new(last_written_offset, segment.end_offset, :unknown, false, false, {}) if (segment.end_offset > last_written_offset)
           end
         else
           splitted_segments << segment
@@ -225,7 +225,7 @@ module FilesHunter
         result_segments << splitted_segments[-1]
       elsif (nbr_consecutive_unknown > 1)
         # Several consecutive segments encountered
-        result_segments << Segment.new(splitted_segments[-nbr_consecutive_unknown].begin_offset, splitted_segments[-1].end_offset, :unknown, false, {})
+        result_segments << Segment.new(splitted_segments[-nbr_consecutive_unknown].begin_offset, splitted_segments[-1].end_offset, :unknown, false, false, {})
       end
 
       return result_segments

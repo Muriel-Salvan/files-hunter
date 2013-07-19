@@ -13,6 +13,7 @@ module FilesHunterTest
           assert_equal 1, segments.size
           assert segments[0].extensions.include?(File.extname(file_name)[1..-1].downcase.to_sym)
           assert_equal false, segments[0].truncated
+          assert_equal false, segments[0].missing_previous_data
         end
       end
 

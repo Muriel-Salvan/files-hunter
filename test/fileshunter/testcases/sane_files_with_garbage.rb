@@ -33,6 +33,7 @@ module FilesHunterTest
             assert_equal segments[0].end_offset+GARBAGE_SIZE, temp_segments[1].end_offset
             assert_equal segments[0].metadata, temp_segments[1].metadata
             assert_equal segments[0].truncated, temp_segments[1].truncated
+            assert_equal segments[0].missing_previous_data, temp_segments[1].missing_previous_data
           end
         end
 
@@ -55,6 +56,7 @@ module FilesHunterTest
             assert_equal segments[0].end_offset, temp_segments[0].end_offset
             assert_equal segments[0].metadata, temp_segments[0].metadata
             assert_equal segments[0].truncated, temp_segments[0].truncated
+            assert_equal segments[0].missing_previous_data, temp_segments[0].missing_previous_data
             assert_equal [:unknown], temp_segments[1].extensions
             assert_equal segments[0].end_offset, temp_segments[1].begin_offset
             assert_equal segments[0].end_offset+GARBAGE_SIZE, temp_segments[1].end_offset
@@ -84,6 +86,7 @@ module FilesHunterTest
             assert_equal segments[0].end_offset+GARBAGE_SIZE, temp_segments[1].end_offset
             assert_equal segments[0].metadata, temp_segments[1].metadata
             assert_equal segments[0].truncated, temp_segments[1].truncated
+            assert_equal segments[0].missing_previous_data, temp_segments[1].missing_previous_data
             assert_equal [:unknown], temp_segments[2].extensions
             assert_equal segments[0].end_offset+GARBAGE_SIZE, temp_segments[2].begin_offset
             assert_equal segments[0].end_offset+GARBAGE_SIZE*2, temp_segments[2].end_offset

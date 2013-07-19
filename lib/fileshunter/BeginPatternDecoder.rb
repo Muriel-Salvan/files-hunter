@@ -34,6 +34,7 @@ module FilesHunter
         @begin_pattern_offset_in_segment = options[:begin_pattern_offset_in_segment] if (options[:begin_pattern_offset_in_segment] != nil)
       end
       @metadata = {}
+      @missing_previous_data = false
       foreach_begin_pattern do |begin_pattern_offset|
         next decode(begin_pattern_offset)
       end
@@ -67,6 +68,11 @@ module FilesHunter
     # * *message* (_String_): Message to give with the exception [default = '']
     def truncated_data(message = '')
       raise TruncatedDataError.new(message)
+    end
+
+    # Indicate that the data is missing previous data.
+    def missing_previous_data
+      @missing_previous_data = true
     end
 
     # Indicate progression in the decoding
@@ -124,6 +130,7 @@ module FilesHunter
             # Try to decode it
             decoded_end_offset = nil
             truncated = false
+            @missing_previous_data = false
             @extension = nil
             @last_offset_to_be_decoded = nil
             begin
@@ -177,7 +184,7 @@ module FilesHunter
                 truncated = true
               end
               # Extract the segment and go on to the next
-              found_segment(begin_pattern_offset, decoded_end_offset, @extension, truncated, @metadata)
+              found_segment(begin_pattern_offset, decoded_end_offset, @extension, truncated, @missing_previous_data, @metadata)
               current_offset = decoded_end_offset
             end
           else

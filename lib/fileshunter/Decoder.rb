@@ -42,15 +42,16 @@ module FilesHunter
     # * *end_offset* (_Fixnum_): The end offset
     # * *extension* (_Symbol_ or <em>list<Symbol></em>): The extension (can be a list of possible extensions)
     # * *truncated* (_Boolean_): Is the data truncated in this segment?
+    # * *missing_previous_data* (_Boolean_): Is some data missing before?
     # * *metadata* (<em>map<Symbol,Object></em>): Metadata associated to this segment (Decoder dependent) [default = {}]
-    def found_segment(segment_begin_offset, segment_end_offset, extension, truncated, metadata)
+    def found_segment(segment_begin_offset, segment_end_offset, extension, truncated, missing_previous_data, metadata)
       raise "Segment begin offset (#{segment_begin_offset}) is lower than data begin offset (#{@begin_offset})" if (segment_begin_offset < @begin_offset)
       if (segment_end_offset > @end_offset)
         log_debug "Segment end offset (#{segment_end_offset}) is greater than data end offset (#{@end_offset}). Mark Segment as truncated."
         segment_end_offset = @end_offset
         truncated = true
       end
-      @segments << Segment.new(segment_begin_offset, segment_end_offset, extension, truncated, metadata)
+      @segments << Segment.new(segment_begin_offset, segment_end_offset, extension, truncated, missing_previous_data, metadata)
       @segments_analyzer.add_bytes_decoded(segment_end_offset - segment_begin_offset)
     end
 

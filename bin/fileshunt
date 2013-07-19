@@ -123,11 +123,11 @@ module FilesHunter
           # List of segments identified in this file
           segments = segments_analyzer.get_segments(file_name)
 
-          report_line = "[#{file_name}] - Found #{segments.size} segments: #{segments.map { |segment| "#{segment.extensions.join(',')}#{segment.truncated ? ' (truncated)' : ''}[#{segment.begin_offset}-#{segment.end_offset}]" }}"
+          report_line = "[#{file_name}] - Found #{segments.size} segments: #{segments.map { |segment| "#{segment.extensions.join(',')}#{segment.truncated ? ' (truncated)' : ''}#{segment.missing_previous_data ? ' (missing previous data)' : ''}[#{segment.begin_offset}-#{segment.end_offset}]" }}"
           log_info report_line
           if debug_activated?
             segments.each_with_index do |segment, idx_segment|
-              log_debug "+ ##{idx_segment} [#{segment.begin_offset}-#{segment.end_offset}]: #{segment.extensions.join(', ')}#{segment.truncated ? ' (truncated)' : ''}"
+              log_debug "+ ##{idx_segment} [#{segment.begin_offset}-#{segment.end_offset}]: #{segment.extensions.join(', ')}#{segment.truncated ? ' (truncated)' : ''}#{segment.missing_previous_data ? ' (missing previous data)' : ''}"
               segment.metadata.each do |key, value|
                 log_debug "  - #{key} => #{value.inspect}"
               end
@@ -176,7 +176,7 @@ module FilesHunter
     # * *segment* (_Segment_): Segment to be written
     # * *file_name* (_String_): File name containing the original data
     def write_segment(data, index, segment, file_name)
-      file_name_suffix = ".__EXTRACT__.#{sprintf('%.4d', index)}.#{segment.truncated ? 'truncated.' : ''}#{segment.extension.to_s}"
+      file_name_suffix = ".__EXTRACT__.#{sprintf('%.4d', index)}.#{segment.truncated ? 'truncated.' : ''}#{segment.missing_previous_data ? 'missing_previous_data.' : ''}#{segment.extension.to_s}"
       extracted_file_name = nil
       if (@extract_dir == nil)
         extracted_file_name = "#{file_name}#{file_name_suffix}"

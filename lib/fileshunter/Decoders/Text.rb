@@ -206,7 +206,7 @@ module FilesHunter
               elsif is_text_xml?(lines, encoding)
                 extension = :xml
               end
-              found_segment(text_begin_offset, text_end_offset, extension, false, :encoding => encoding)
+              found_segment(text_begin_offset, text_end_offset, extension, false, false, :encoding => encoding)
             end
             current_offset = text_end_offset + 1
           end
