@@ -35,11 +35,15 @@ module FilesHunter
 
         cursor = offset + 2
         nbr_segments = 0
+        quantisation_tables_id = []
+        huffman_ac_tables_id = []
+        huffman_dc_tables_id = []
+        found_sos = false
+        found_sof = false
         while (ending_offset == nil)
           # Here cursor is at the beginning of the next marker
           # Read the 2 next bytes: they should be FF ??
-          log_debug "=== Cursor is @#{cursor}"
-          log_debug "=== Decoding next offset: #{@data[cursor..cursor+1].inspect}"
+          log_debug "@#{cursor} Decoding next offset: #{@data[cursor..cursor+1].inspect}"
           invalid_data("@#{cursor} - Did not get a valid marker definition: #{@data[cursor..cursor+1].inspect}") if (@data[cursor] != "\xFF")
           c_1 = @data[cursor+1]
           invalid_data("@#{cursor} - Invalid marker: #{c_1.ord}") if (c_1.ord < 192)
@@ -117,6 +121,87 @@ module FilesHunter
                 #invalid_data("@#{cursor} - TIFF segment not ending (#{segments[0].end_offset}) at the end of Exif (#{cursor+2+size}).") if (segments[0].end_offset != cursor+2+size)
                 metadata( :exif_metadata => segments[0].metadata )
                 found_relevant_data([:jpg, :thm])
+              end
+            when "\xC0".."\xC3"
+              # SOF: Start of Frame
+              invalid_data("@#{cursor} - Found several SOF markers") if found_sof
+              invalid_data("@#{cursor} - Found a SOF marker after the SOS marker") if found_sos
+              found_sof = true
+              sample_precision = @data[cursor+4].ord
+              invalid_data("@#{cursor} - Invalid sample precision: #{sample_precision}") if ((sample_precision != 8) and (sample_precision != 12))
+              image_height = BinData::Uint16be.read(@data[cursor+5..cursor+6])
+              image_width = BinData::Uint16be.read(@data[cursor+7..cursor+8])
+              metadata(
+                :image_height => image_height,
+                :image_width => image_width
+              )
+              nbr_components = @data[cursor+9].ord
+              invalid_data("@#{cursor} - Invalid number of components: #{nbr_components}") if (nbr_components == 0)
+              # Check that quantisation tables have been defined
+              nbr_components.times do |idx_component|
+                sampling = @data[cursor+11+idx_component*3].ord
+                horizontal_sampling = ((sampling & 0b11110000) >> 4)
+                vertical_sampling = (sampling & 0b00001111)
+                invalid_data("@#{cursor} - Invalid horizontal sampling: #{horizontal_sampling}") if (horizontal_sampling == 0)
+                invalid_data("@#{cursor} - Invalid vertical sampling: #{vertical_sampling}") if (vertical_sampling == 0)
+                dqt_id = @data[cursor+12+idx_component*3].ord
+                invalid_data("@#{cursor} - Missing quantisation table ID #{dqt_id}") if (!quantisation_tables_id.include?(dqt_id))
+              end
+            when "\xC4"
+              # DHT: Define Huffman tables
+              end_cursor = cursor + 2 + size
+              dht_cursor = cursor + 4
+              while (dht_cursor < end_cursor)
+                header_byte = @data[dht_cursor].ord
+                huffman_type = ((header_byte & 0b11110000) >> 4)
+                invalid_data("@#{cursor} - Unknown Huffman table type: #{huffman_type}") if (huffman_type > 1)
+                if (huffman_type == 0)
+                  huffman_dc_table_id = (header_byte & 0b00001111)
+                  invalid_data("@#{cursor} - Huffman DC table id #{huffman_dc_table_id} already defined.") if (huffman_dc_tables_id.include?(huffman_dc_table_id))
+                  huffman_dc_tables_id << huffman_dc_table_id
+                  log_debug "@#{cursor} - Found Huffman DC table: #{huffman_dc_table_id}"
+                else
+                  huffman_ac_table_id = (header_byte & 0b00001111)
+                  invalid_data("@#{cursor} - Huffman AC table id #{huffman_ac_table_id} already defined.") if (huffman_ac_tables_id.include?(huffman_ac_table_id))
+                  huffman_ac_tables_id << huffman_ac_table_id
+                  log_debug "@#{cursor} - Found Huffman AC table: #{huffman_ac_table_id}"
+                end
+                nbr_elements = 0
+                @data[dht_cursor+1..dht_cursor+16].bytes.each do |nbr_element_for_depth|
+                  nbr_elements += nbr_element_for_depth
+                end
+                dht_cursor += 17 + nbr_elements
+                invalid_data("@#{dqt_cursor} - End of Huffman table was supposed to be @#{end_cursor}.") if (dht_cursor > end_cursor)
+              end
+            when "\xDA"
+              # SOS: Start of Scan
+              invalid_data("@#{cursor} - SOS marker begins whereas no Huffman DC table has been defined.") if (huffman_dc_tables_id.empty?)
+              invalid_data("@#{cursor} - SOS marker begins whereas no Huffman AC table has been defined.") if (huffman_ac_tables_id.empty?)
+              invalid_data("@#{cursor} - SOS marker begins whereas no quantisation table has been defined.") if (quantisation_tables_id.empty?)
+              invalid_data("@#{cursor} - SOS marker begins whereas no SOF marker has been encountered.") if (!found_sof)
+              found_sos = true
+              nbr_components = @data[cursor+4].ord
+              invalid_data("@#{cursor} - Invalid number of components: #{nbr_components}") if (nbr_components == 0)
+              nbr_components.times do |idx_component|
+                huffman_table_ids = @data[cursor+6+2*idx_component].ord
+                huffman_dc_table_id = ((huffman_table_ids & 0b11110000) >> 4)
+                huffman_ac_table_id = (huffman_table_ids & 0b00001111)
+                invalid_data("@#{cursor} - Unknown DC Huffman table: #{huffman_dc_table_id}") if (!huffman_dc_tables_id.include?(huffman_dc_table_id))
+                invalid_data("@#{cursor} - Unknown AC Huffman table: #{huffman_ac_table_id}") if (!huffman_ac_tables_id.include?(huffman_ac_table_id))
+              end
+            when "\xDB"
+              # DQT: Define quantisation tables
+              end_cursor = cursor + 2 + size
+              dqt_cursor = cursor + 4
+              while (dqt_cursor < end_cursor)
+                header_byte = @data[dqt_cursor].ord
+                precision = ((header_byte & 0b11110000) >> 4)
+                quantisation_table_id = (header_byte & 0b00001111)
+                invalid_data("@#{cursor} - Quantisation table id #{quantisation_table_id} already defined.") if (quantisation_tables_id.include?(quantisation_table_id))
+                quantisation_tables_id << quantisation_table_id
+                log_debug "@#{cursor} - Found quantisation table: #{quantisation_table_id}"
+                dqt_cursor += 1 + 64*((precision == 0) ? 1 : 2)
+                invalid_data("@#{dqt_cursor} - End of quantisation table was supposed to be @#{end_cursor}.") if (dqt_cursor > end_cursor)
               end
             end
             # Does it have entropy data?
