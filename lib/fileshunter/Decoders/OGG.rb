@@ -24,13 +24,13 @@ module FilesHunter
         nbr_pages = 0
         bitstreams = []
         while (ending_offset == nil)
-          version = @data[cursor+4].ord
+          #version = @data[cursor+4].ord
           header_type = @data[cursor+5].ord
           invalid_data("@#{cursor} - Invalid header type: #{header_type}") if (header_type > 7)
-          granule_position = @data[cursor+6..cursor+13]
+          #granule_position = @data[cursor+6..cursor+13]
           bitstream_sn = BinData::Uint32le.read(@data[cursor+14..cursor+17])
           page_sequence_idx = BinData::Uint32le.read(@data[cursor+18..cursor+21])
-          checksum = @data[cursor+22..cursor+25]
+          #checksum = @data[cursor+22..cursor+25]
           # Read the number of segments
           nbr_segments = @data[cursor+26].ord
           # Compute the total size of the payload

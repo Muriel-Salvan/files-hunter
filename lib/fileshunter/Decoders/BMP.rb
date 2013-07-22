@@ -6,6 +6,8 @@ module FilesHunter
 
       BEGIN_PATTERN_BMP = Regexp.new("BM....\x00\x00\x00\x00", nil, 'n')
 
+      PADDING_CHAR = "\x00".force_encoding(Encoding::ASCII_8BIT)
+
       def get_begin_pattern
         return BEGIN_PATTERN_BMP, { :offset_inc => 2, :max_regexp_size => 10 }
       end
@@ -97,6 +99,13 @@ module FilesHunter
           cursor += bitmap_size
         end
         progress(cursor)
+        # Eventually pad to the next 32 bits with \x00
+        rest = (cursor - offset) % 4
+        if (rest > 0)
+          # Check if we have padding
+          possible_padding_size = 4 - rest
+          cursor += possible_padding_size if ((cursor + possible_padding_size <= @end_offset) and (@data[cursor..cursor + possible_padding_size - 1] == PADDING_CHAR * possible_padding_size))
+        end
         ending_offset = cursor
 
         return ending_offset
