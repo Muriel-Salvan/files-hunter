@@ -19,4 +19,5 @@ activate_log_debug(true) if activate_debug
 require 'fileshunter/common'
 require 'fileshunter/testcases/sane_files'
 require 'fileshunter/testcases/sane_files_with_garbage'
-require 'fileshunter/testcases/sane_files_duplicated'
+require 'fileshunter/testcases/duplicated_files'
+require 'fileshunter/testcases/truncated_files'

@@ -59,6 +59,7 @@ module FilesHunter
           @bindata_reader_32 = BinData::Uint32be
         end
         ifd_offset = @bindata_reader_32.read(@data[offset+4..offset+7])
+        extensions = [:tif, :tiff] # By default
         @max_end_offset = ifd_offset
         @strip_offsets = []
         @strip_byte_counts = []
@@ -129,7 +130,7 @@ module FilesHunter
             nbr.times do |idx|
               @strip_offsets << ((type == 3) ? @bindata_reader_16.read(@data[cursor+idx*value_size..cursor+idx*value_size+1]) : @bindata_reader_32.read(@data[cursor+idx*value_size..cursor+idx*value_size+3]))
             end
-            found_relevant_data([:tif, :tiff])
+            found_relevant_data(extensions)
           when 274
             orientation = @bindata_reader_16.read(@data[cursor..cursor+1])
             invalid_data("@#{cursor} - Invalid orientation #{orientation}") if ((orientation == 0) or (orientation > 8))
@@ -178,7 +179,7 @@ module FilesHunter
             nbr.times do |idx|
               @tile_offsets << @bindata_reader_32.read(@data[cursor+idx*4..cursor+idx*4+3])
             end
-            found_relevant_data([:tif, :tiff])
+            found_relevant_data(extensions)
           when 325
             nbr.times do |idx|
               @tile_byte_counts << @bindata_reader_32.read(@data[cursor+idx*4..cursor+idx*4+3])
@@ -229,7 +230,7 @@ module FilesHunter
         end
         parse_ifd(ifd_offset, &@tag_parser)
         log_debug "@#{@file_offset + @max_end_offset} - Found #{@strip_offsets.size} strips and #{@tile_offsets.size} tiles."
-        found_relevant_data([:tif, :tiff])
+        found_relevant_data(extensions)
         invalid_data("@#{@file_offset + @max_end_offset} - No strips nor tiles defined.") if ((!@accept_no_image_data) and (@strip_offsets.empty?) and (@tile_offsets.empty?))
         # Special case:
         if ((@strip_offsets.size == 1) and
@@ -285,6 +286,7 @@ module FilesHunter
       #   * *size* (_Fixnum_): Complete size of this tag
       #   * *cursor* (_Fixnum_): Cursor to read the values from
       def parse_ifd(ifd_offset, &proc)
+        log_debug "@#{@file_offset + ifd_offset} - Parse IFD"
         while (ifd_offset != 0)
           cursor = @file_offset + ifd_offset
           nbr_entries = @bindata_reader_16.read(@data[cursor..cursor+1])

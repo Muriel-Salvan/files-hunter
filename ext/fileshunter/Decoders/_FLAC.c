@@ -33,7 +33,8 @@ void load_next_block(
   *ptr_last_data_block = (rb_ary_entry(rb_result, 2) == Qtrue);
   *ptr_str_cursor_start = RSTRING_PTR(rb_str_data_block) + offset - offset_data_block;
   *ptr_str_cursor = (*ptr_str_cursor_start);
-  *ptr_str_cursor_end = (*ptr_str_cursor_start) + size_data_block;
+  *ptr_str_cursor_end = RSTRING_PTR(rb_str_data_block) + size_data_block;
+  //printf("Next block loaded correctly: @%u (size=%u) &start=%u &end=%u\n", offset, size_data_block, *ptr_str_cursor_start, *ptr_str_cursor_end);
 }
 
 /** Decode data at a given cursor and cursor_bits position as a given number of samples encoded in a Rice partition
@@ -89,6 +90,7 @@ static VALUE flac_decode_rice(
     // last_data_block indicates if this is the last block
 
     // 1. Decode next bits as a unary encoded number: this will be the high bits of the value
+    //printf("@%u,%u - 0 cursor=%u str_cursor=%u str_cursor_end=%u\n", cursor+str_cursor-str_cursor_start, cursor_bits, cursor, str_cursor-str_cursor_start, str_cursor_end-str_cursor_start);
 #ifdef DEBUG
     printf("@%u,%u - Reading %u\n", cursor+str_cursor-str_cursor_start, cursor_bits, *str_cursor);
     high_part = 0;
@@ -112,6 +114,7 @@ static VALUE flac_decode_rice(
         found = 1;
       }
     }
+    //printf("@%u,%u - 0.5 cursor=%u str_cursor=%u str_cursor_end=%u\n", cursor+str_cursor-str_cursor_start, cursor_bits, cursor, str_cursor-str_cursor_start, str_cursor_end-str_cursor_start);
     if (!found) {
       // Here we are byte-aligned
       // str_cursor points on the byte we are starting to search from (can be at the end of our current block)
@@ -138,6 +141,7 @@ static VALUE flac_decode_rice(
           found = 1;
         }
       }
+      //printf("@%u,%u - 0.8 cursor=%u str_cursor=%u str_cursor_end=%u\n", cursor+str_cursor-str_cursor_start, cursor_bits, cursor, str_cursor-str_cursor_start, str_cursor_end-str_cursor_start);
       // Here, str_cursor points on the first non-null byte
       current_byte = *str_cursor;
       cursor_bits = 0;
@@ -150,6 +154,7 @@ static VALUE flac_decode_rice(
       }
     }
     // Here, str_cursor and cursor_bits point on the first bit set to 1
+    //printf("@%u,%u - 1 cursor=%u str_cursor=%u str_cursor_end=%u\n", cursor+str_cursor-str_cursor_start, cursor_bits, cursor, str_cursor-str_cursor_start, str_cursor_end-str_cursor_start);
 
     // 2. Read the next rice_parameter bits: this will be the low bits of the value
 #ifdef DEBUG
@@ -209,6 +214,7 @@ static VALUE flac_decode_rice(
       cursor += str_cursor - str_cursor_start;
       load_next_block(rb_self, rb_data, cursor, &str_cursor, &str_cursor_start, &str_cursor_end, &last_data_block);
     }
+    //printf("@%u,%u - 2 cursor=%u str_cursor=%u str_cursor_end=%u\n", cursor+str_cursor-str_cursor_start, cursor_bits, cursor, str_cursor-str_cursor_start, str_cursor_end-str_cursor_start);
 #endif
 
   }

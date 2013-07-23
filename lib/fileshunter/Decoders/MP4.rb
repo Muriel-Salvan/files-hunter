@@ -427,10 +427,12 @@ module FilesHunter
         found_ftyp = false
         found_mdat = false
         valid_mp4 = false
+        nbr_boxes_parsed = 0
         ending_offset, nbr_boxes = parse_mp4_box(offset, ACCEPTABLE_BOX_TYPES) do |box_hierarchy, box_cursor, box_size|
           # If we browsed enough in the file, mark it as valid
           if ((!valid_mp4) and
-              (box_hierarchy.size > 2))
+              ((box_hierarchy.size > 2) or
+               (nbr_boxes_parsed > 1)))
             valid_mp4 = true
             found_relevant_data(:mov) if (!found_ftyp)
           end
@@ -449,7 +451,7 @@ module FilesHunter
             found_ftyp = true
           when 'mvhd'
             version = @data[box_cursor+8].ord
-            flags = BinData::Uint24be.read(@data[box_cursor+9..box_cursor+11])
+            #flags = BinData::Uint24be.read(@data[box_cursor+9..box_cursor+11])
             cursor = box_cursor + 12
             creation_time = nil
             modification_time = nil
@@ -489,6 +491,7 @@ module FilesHunter
           when "\xA9inf"
             metadata( :inf => @data[box_cursor+12..box_cursor+box_size-1].strip )
           end
+          nbr_boxes_parsed += 1
         end
         # An MP4 without ftyp is surely a .mov
         found_relevant_data(:mov) if (!found_ftyp)

@@ -3,7 +3,7 @@ module FilesHunterTest
   module TestCases
 
     # Test that all our sane files are recognized with their correct extension if they are duplicated with garbage
-    class SaneFilesDuplicated < ::Test::Unit::TestCase
+    class DuplicatedFiles < ::Test::Unit::TestCase
 
       include FilesHunterTest::Common
 
@@ -12,7 +12,7 @@ module FilesHunterTest
       Dir.glob("#{FILES_ROOT_PATH}/**/*").each do |file_name|
 
         # Insert garbage before
-        define_method "test_sane_file_duplicated_#{file_name.gsub(FILES_ROOT_PATH,'')}" do
+        define_method "test_duplicated_file_#{file_name.gsub(FILES_ROOT_PATH,'')}" do
           original_data = nil
           File.open(file_name, 'rb') do |file|
             original_data = file.read
