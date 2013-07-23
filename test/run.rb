@@ -1,5 +1,7 @@
 require 'test/unit'
 
+activate_debug = ARGV.delete('--debug')
+
 root_path = File.expand_path("#{File.dirname(__FILE__)}/..")
 
 # Add the test directory to the current load path
@@ -11,7 +13,7 @@ $: << "#{root_path}/ext"
 # Require the main library
 require 'fileshunter'
 
-#activate_log_debug(true)
+activate_log_debug(true) if activate_debug
 
 # Load test files to execute
 require 'fileshunter/common'

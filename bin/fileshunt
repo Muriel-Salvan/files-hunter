@@ -72,20 +72,24 @@ module FilesHunter
         files = []
         if (remaining_args.empty?)
           # Put current directory
+          log_debug 'Adding current directory to inspect'
           files = Dir.glob("#{Dir.getwd}/**/*")
         else
           remaining_args.each do |file_name|
             if (File.exists?(file_name))
               if (File.directory?(file_name))
+                log_debug "Adding directory #{file_name} to inspect"
                 files.concat(Dir.glob("#{file_name}/**/*"))
               else
+                log_debug "Adding file #{file_name} to inspect"
                 files << file_name
               end
             else
               # Might have wildcards in it
+              log_debug "Adding filter #{file_name} to inspect"
               lst_files = Dir.glob(file_name)
               if (lst_files.empty?)
-                puts "WARNING: Unable to find file: #{file_name}"
+                log_warn "Unable to find file: #{file_name}"
               else
                 files.concat(lst_files)
               end

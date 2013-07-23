@@ -63,8 +63,8 @@ module FilesHunter
         characteristics = BinData::Uint16le.read(@data[cursor+18..cursor+19])
         invalid_data("@#{cursor+18} - Invalid characteristics #{characteristics}: bits should be 0") if ((characteristics & 80) != 0)
         # We can have a first guess on the extension
-        extension = ((characteristics & 8192) == 0) ? :exe : ((optional_header_size == 0) ? :obj : :dll)
-        found_relevant_data(extension)
+        file_type = ((characteristics & 8192) == 0) ? :exe : ((optional_header_size == 0) ? :obj : :dll)
+        found_relevant_data((file_type == :exe) ? [ :exe, :sys ] : ((file_type == :obj) ? :obj : [ :dll, :drv, :ocx ]))
         metadata(
           :target_machine => target_machine,
           :nbr_sections => nbr_sections,
@@ -114,10 +114,15 @@ module FilesHunter
           headers_size = BinData::Uint32le.read(@data[cursor+60..cursor+64])
           #checksum = BinData::Uint32le.read(@data[cursor+64..cursor+67])
           subsystem = BinData::Uint16le.read(@data[cursor+68..cursor+69])
-          if ((extension == :dll) and
-              (subsystem == 1))
-            extension = :drv
-            found_relevant_data(extension)
+          if (subsystem == 1)
+            case file_type
+            when :dll
+              file_type = :drv
+              found_relevant_data(:drv)
+            when :exe
+              file_type = :sys
+              found_relevant_data(:sys)
+            end
           end
           dll_characteristics = BinData::Uint16le.read(@data[cursor+70..cursor+71])
           invalid_data("@#{cursor+70} - Invalid DLL characteristics #{dll_characteristics}: bits should be 0") if ((dll_characteristics & 4111) != 0)
@@ -150,6 +155,7 @@ module FilesHunter
           #end
           cursor += 8*nbr_rva_and_sizes
           progress(cursor)
+          log_debug "@#{cursor} - Extended header: mode_pe32=#{mode_pe32} win32_version=#{win32_version} headers_size=#{headers_size} subsystem=#{subsystem} dll_characteristics=#{dll_characteristics} nbr_rva_and_sizes=#{nbr_rva_and_sizes}"
           # We should have reached the end of optional header
           # Sometimes optional_header_end_offset is invalid
           invalid_data("@#{cursor} - Optional headers end at #{cursor} but were supposed to end at #{optional_header_end_offset}") if (cursor != optional_header_end_offset)
@@ -210,10 +216,10 @@ module FilesHunter
           end
           # Check OCX
           if ((text_section_offset == section_offset) and
-              (extension == :dll) and
+              (file_type == :dll) and
               (@data.index('DllRegisterServer', cursor) != nil))
-            extension = :ocx
-            found_relevant_data(extension)
+            file_type = :ocx
+            found_relevant_data(:ocx)
           end
           cursor += sections[section_offset]
           max_cursor = cursor if (cursor > max_cursor)
