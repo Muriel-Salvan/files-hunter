@@ -95,7 +95,7 @@ module FilesHunter
             'CFBF', # includes Thumbs.db, DOC, XLS, PPT, MSI
             'ASF', # includes WMV
             'CAB', # includes CAB, MSU, MZZ
-            'EXE', # includes DLL, EXE, OCX, OBJ. Cannot detect data concatenated after some EXE files. Detects DRV and SYS as EXE/DLL.
+            'EXE', # includes DLL, EXE, OCX, OBJ, DRV, SYS, FON. Cannot detect data concatenated after some EXE files.
             'MPG_Video', # not generic enough
             'M2V', # not generic enough
             'EBML', # includes MKV, WEBM
@@ -105,7 +105,7 @@ module FilesHunter
             'FLAC',
             'BMP',
             'ICO', # includes ICO, CUR
-            'Text', # includes TXT, SRT, RTF (both ASCII-8BIT and UTF-16)
+            'Text', # includes TXT, LOG, SRT, RTF, HTML, XML (both ASCII-8BIT and UTF-16)
             'JPEG', # includes JPG, THM
             'TIFF',
             'MP3'

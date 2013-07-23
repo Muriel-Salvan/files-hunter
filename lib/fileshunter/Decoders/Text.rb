@@ -196,7 +196,7 @@ module FilesHunter
               text = @data[text_begin_offset+text_header_size..text_end_offset-1].clone.force_encoding(encoding)
               lines = text.split("\r\n".encode(encoding))
               lines = text.split("\n".encode(encoding)) if (lines.size == 1)
-              extension = :txt # By default
+              extension = [ :txt, :log ] # By default
               if is_text_srt?(lines, encoding)
                 extension = :srt
               elsif is_text_rtf?(lines, encoding)

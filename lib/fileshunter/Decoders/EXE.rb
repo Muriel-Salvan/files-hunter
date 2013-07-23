@@ -61,18 +61,18 @@ module FilesHunter
           # Reference: http://www.chiark.greenend.org.uk/~sgtatham/fonts/dewinfont
           ne_offset = cursor
           cursor += 2
-          linker_major_version = @data[cursor].ord
-          linker_minor_version = @data[cursor+1].ord
+          #linker_major_version = @data[cursor].ord
+          #linker_minor_version = @data[cursor+1].ord
           entry_table_offset = BinData::Uint16le.read(@data[cursor+2..cursor+3])
           entry_table_size = BinData::Uint16le.read(@data[cursor+4..cursor+5])
-          file_load_crc = BinData::Uint32le.read(@data[cursor+6..cursor+9])
-          program_flags = @data[cursor+10].ord
-          application_flags = @data[cursor+11].ord
-          auto_data_segment_index = BinData::Uint16le.read(@data[cursor+12..cursor+13])
-          initial_local_heap_size = BinData::Uint16le.read(@data[cursor+14..cursor+15])
-          initial_stack_size = BinData::Uint16le.read(@data[cursor+16..cursor+17])
-          entry_point = BinData::Uint32le.read(@data[cursor+18..cursor+21])
-          initial_stack_pointer = BinData::Uint32le.read(@data[cursor+22..cursor+25])
+          #file_load_crc = BinData::Uint32le.read(@data[cursor+6..cursor+9])
+          #program_flags = @data[cursor+10].ord
+          #application_flags = @data[cursor+11].ord
+          #auto_data_segment_index = BinData::Uint16le.read(@data[cursor+12..cursor+13])
+          #initial_local_heap_size = BinData::Uint16le.read(@data[cursor+14..cursor+15])
+          #initial_stack_size = BinData::Uint16le.read(@data[cursor+16..cursor+17])
+          #entry_point = BinData::Uint32le.read(@data[cursor+18..cursor+21])
+          #initial_stack_pointer = BinData::Uint32le.read(@data[cursor+22..cursor+25])
           nbr_segments = BinData::Uint16le.read(@data[cursor+26..cursor+27])
           nbr_module_reference = BinData::Uint16le.read(@data[cursor+28..cursor+29])
           non_resident_names_table_size = BinData::Uint16le.read(@data[cursor+30..cursor+31])
@@ -82,19 +82,19 @@ module FilesHunter
           module_reference_table_offset = BinData::Uint16le.read(@data[cursor+38..cursor+39])
           imported_names_table_offset = BinData::Uint16le.read(@data[cursor+40..cursor+41])
           non_resident_names_table_offset = BinData::Uint32le.read(@data[cursor+42..cursor+45])
-          moveable_entry_point_count = BinData::Uint16le.read(@data[cursor+46..cursor+47])
-          file_alignment = BinData::Uint16le.read(@data[cursor+48..cursor+49])
-          nbr_resource_table_entries = BinData::Uint16le.read(@data[cursor+50..cursor+51])
-          target_operating_system = @data[cursor+52].ord
-          other_flags = @data[cursor+53].ord
-          return_thunks_offset = BinData::Uint16le.read(@data[cursor+54..cursor+55])
-          segment_reference_thunks_offset = BinData::Uint16le.read(@data[cursor+56..cursor+57])
-          code_swap_area_size = BinData::Uint16le.read(@data[cursor+58..cursor+59])
-          expected_win_version_minor = @data[cursor+60].ord
-          expected_win_version_major = @data[cursor+61].ord
+          #moveable_entry_point_count = BinData::Uint16le.read(@data[cursor+46..cursor+47])
+          #file_alignment = BinData::Uint16le.read(@data[cursor+48..cursor+49])
+          #nbr_resource_table_entries = BinData::Uint16le.read(@data[cursor+50..cursor+51])
+          #target_operating_system = @data[cursor+52].ord
+          #other_flags = @data[cursor+53].ord
+          #return_thunks_offset = BinData::Uint16le.read(@data[cursor+54..cursor+55])
+          #segment_reference_thunks_offset = BinData::Uint16le.read(@data[cursor+56..cursor+57])
+          #code_swap_area_size = BinData::Uint16le.read(@data[cursor+58..cursor+59])
+          #expected_win_version_minor = @data[cursor+60].ord
+          #expected_win_version_major = @data[cursor+61].ord
           cursor += 62
           progress(cursor)
-          puts "@#{cursor} - NE header:"
+          log_debug "@#{cursor} - NE header: entry_table_offset=#{entry_table_offset} entry_table_size=#{entry_table_size} nbr_segments=#{nbr_segments} nbr_module_reference=#{nbr_module_reference} non_resident_names_table_size=#{non_resident_names_table_size} segment_table_offset=#{segment_table_offset} resource_table_offset=#{resource_table_offset} resident_names_table_offset=#{resident_names_table_offset} module_reference_table_offset=#{module_reference_table_offset} imported_names_table_offset=#{imported_names_table_offset} non_resident_names_table_offset=#{non_resident_names_table_offset}"
           # Segment table
           log_debug "@#{cursor} - Segment table"
           invalid_data("@#{cursor} - Segment table offset (#{segment_table_offset}) should have been set here (#{cursor-ne_offset}).") if (segment_table_offset != cursor-ne_offset)
@@ -199,7 +199,7 @@ module FilesHunter
           cursor = ne_offset + entry_table_offset
           log_debug "@#{cursor} - Entry table"
           nbr_entries_in_bundle = @data[cursor].ord
-          segment_indicator_for_bundle = @data[cursor+1].ord
+          #segment_indicator_for_bundle = @data[cursor+1].ord
           cursor += 2
           while (nbr_entries_in_bundle > 0)
             # TODO
