@@ -70,7 +70,7 @@ module FilesHunter
         @image_width = nil
         @image_length = nil
         @tag_parser = Proc.new do |tag, type, nbr, size, cursor|
-          case tag
+          case tag.to_i
           when 2
             metadata( :gps_latitude => @data[cursor..cursor+size-1] )
           when 4

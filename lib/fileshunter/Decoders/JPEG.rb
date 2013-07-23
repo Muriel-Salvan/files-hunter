@@ -4,25 +4,37 @@ module FilesHunter
 
     class JPEG < BeginPatternDecoder
 
-      END_MARKER = "\xD9"
+      MARKER_PREFIX = "\xFF".force_encoding(Encoding::ASCII_8BIT)
+      END_MARKER = "\xD9".force_encoding(Encoding::ASCII_8BIT)
       MARKERS_WITHOUT_PAYLOAD = [
-        "\xD8",
-        "\xD9"
+        "\xD8".force_encoding(Encoding::ASCII_8BIT),
+        "\xD9".force_encoding(Encoding::ASCII_8BIT)
       ]
-      MARKER_WITH_ENTROPY_DATA = "\xDA"
+      MARKER_WITH_ENTROPY_DATA = "\xDA".force_encoding(Encoding::ASCII_8BIT)
+      MARKER_APP0 = "\xE0".force_encoding(Encoding::ASCII_8BIT)
+      MARKER_APP1 = "\xE1".force_encoding(Encoding::ASCII_8BIT)
+      MARKER_SOF0 = "\xC0".force_encoding(Encoding::ASCII_8BIT)
+      MARKER_SOF3 = "\xC3".force_encoding(Encoding::ASCII_8BIT)
+      MARKER_DHT = "\xC4".force_encoding(Encoding::ASCII_8BIT)
+      MARKER_SOS = "\xDA".force_encoding(Encoding::ASCII_8BIT)
+      MARKER_DQT = "\xDB".force_encoding(Encoding::ASCII_8BIT)
       MARKERS_IGNORED_IN_ENTROPY_DATA = [
-        "\x00",
-        "\xD0",
-        "\xD1",
-        "\xD2",
-        "\xD3",
-        "\xD4",
-        "\xD5",
-        "\xD6",
-        "\xD7",
-        "\xFF"
+        "\x00".force_encoding(Encoding::ASCII_8BIT),
+        "\xD0".force_encoding(Encoding::ASCII_8BIT),
+        "\xD1".force_encoding(Encoding::ASCII_8BIT),
+        "\xD2".force_encoding(Encoding::ASCII_8BIT),
+        "\xD3".force_encoding(Encoding::ASCII_8BIT),
+        "\xD4".force_encoding(Encoding::ASCII_8BIT),
+        "\xD5".force_encoding(Encoding::ASCII_8BIT),
+        "\xD6".force_encoding(Encoding::ASCII_8BIT),
+        "\xD7".force_encoding(Encoding::ASCII_8BIT),
+        "\xFF".force_encoding(Encoding::ASCII_8BIT)
       ]
-      MARKERS_IGNORED_IN_ENTROPY_DATA_REGEXP = Regexp.new("\xFF[^#{MARKERS_IGNORED_IN_ENTROPY_DATA.join}]".force_encoding(Encoding::ASCII_8BIT))
+      MARKERS_IGNORED_IN_ENTROPY_DATA_REGEXP = Regexp.new("#{MARKER_PREFIX}[^#{MARKERS_IGNORED_IN_ENTROPY_DATA.join}]", nil, 'n')
+
+      JFIF_HEADER = "JFIF\x00".force_encoding(Encoding::ASCII_8BIT)
+      JFXX_HEADER = "JFXX\x00".force_encoding(Encoding::ASCII_8BIT)
+      EXIF_HEADER = "Exif\x00\x00".force_encoding(Encoding::ASCII_8BIT)
 
       VALID_EXTENSION_CODES = [ 16, 17, 19 ]
 
@@ -44,7 +56,7 @@ module FilesHunter
           # Here cursor is at the beginning of the next marker
           # Read the 2 next bytes: they should be FF ??
           log_debug "@#{cursor} Decoding next offset: #{@data[cursor..cursor+1].inspect}"
-          invalid_data("@#{cursor} - Did not get a valid marker definition: #{@data[cursor..cursor+1].inspect}") if (@data[cursor] != "\xFF")
+          invalid_data("@#{cursor} - Did not get a valid marker definition: #{@data[cursor..cursor+1].inspect}") if (@data[cursor] != MARKER_PREFIX)
           c_1 = @data[cursor+1]
           invalid_data("@#{cursor} - Invalid marker: #{c_1.ord}") if (c_1.ord < 192)
           # Does this marker have a payload?
@@ -61,11 +73,11 @@ module FilesHunter
             size = BinData::Uint16be.read(@data[cursor+2..cursor+3])
             log_debug "=== Payload of size #{size}"
             case c_1
-            when "\xE0"
+            when MARKER_APP0
               # Application specific data
               # Usually used for JFIF
               case @data[cursor+4..cursor+8]
-              when "JFIF\x00"
+              when JFIF_HEADER
                 invalid_data("@#{cursor} - Invalid size for JFIF marker: #{size}") if (size < 16)
                 version_major = @data[cursor+9].ord
                 version_minor = @data[cursor+10].ord
@@ -91,16 +103,16 @@ module FilesHunter
                   )
                 end
                 metadata( :jfif_metadata => jfif_metadata )
-              when "JFXX\x00"
+              when JFXX_HEADER
                 extension_code = @data[cursor+9].ord
                 invalid_data("@#{cursor} - Invalid extension code: #{extension_code}") if (!VALID_EXTENSION_CODES.include?(extension_code))
                 metadata( :jfxx_metadata => { :extension_code => extension_code } )
               end
-            when "\xE1"
+            when MARKER_APP1
               # Application specific data
               # Usually used for Exif
               case @data[cursor+4..cursor+9]
-              when "Exif\x00\x00"
+              when EXIF_HEADER
                 # Read a TIFF file from cursor+10
                 require 'fileshunter/Decoders/TIFF'
                 invalid_data("@#{cursor} - Invalid TIFF header") if (@data[cursor+10..cursor+13].index(FilesHunter::Decoders::TIFF::BEGIN_PATTERN_TIFF) != 0)
@@ -122,7 +134,7 @@ module FilesHunter
                 metadata( :exif_metadata => segments[0].metadata )
                 found_relevant_data([:jpg, :thm])
               end
-            when "\xC0".."\xC3"
+            when MARKER_SOF0..MARKER_SOF3
               # SOF: Start of Frame
               invalid_data("@#{cursor} - Found several SOF markers") if found_sof
               invalid_data("@#{cursor} - Found a SOF marker after the SOS marker") if found_sos
@@ -147,7 +159,7 @@ module FilesHunter
                 dqt_id = @data[cursor+12+idx_component*3].ord
                 invalid_data("@#{cursor} - Missing quantisation table ID #{dqt_id}") if (!quantisation_tables_id.include?(dqt_id))
               end
-            when "\xC4"
+            when MARKER_DHT
               # DHT: Define Huffman tables
               end_cursor = cursor + 2 + size
               dht_cursor = cursor + 4
@@ -173,7 +185,7 @@ module FilesHunter
                 dht_cursor += 17 + nbr_elements
                 invalid_data("@#{dqt_cursor} - End of Huffman table was supposed to be @#{end_cursor}.") if (dht_cursor > end_cursor)
               end
-            when "\xDA"
+            when MARKER_SOS
               # SOS: Start of Scan
               invalid_data("@#{cursor} - SOS marker begins whereas no Huffman DC table has been defined.") if (huffman_dc_tables_id.empty?)
               invalid_data("@#{cursor} - SOS marker begins whereas no Huffman AC table has been defined.") if (huffman_ac_tables_id.empty?)
@@ -189,7 +201,7 @@ module FilesHunter
                 invalid_data("@#{cursor} - Unknown DC Huffman table: #{huffman_dc_table_id}") if (!huffman_dc_tables_id.include?(huffman_dc_table_id))
                 invalid_data("@#{cursor} - Unknown AC Huffman table: #{huffman_ac_table_id}") if (!huffman_ac_tables_id.include?(huffman_ac_table_id))
               end
-            when "\xDB"
+            when MARKER_DQT
               # DQT: Define quantisation tables
               end_cursor = cursor + 2 + size
               dqt_cursor = cursor + 4

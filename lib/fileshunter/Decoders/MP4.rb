@@ -1,3 +1,5 @@
+# encoding: ASCII-8BIT
+
 module FilesHunter
 
   module Decoders
@@ -480,8 +482,6 @@ module FilesHunter
               :rate => rate,
               :volume => volume
             )
-          when 'CNCV'
-            metadata( :CNCV => @data[box_cursor+8..box_cursor+box_size-1] )
           when 'CNMN'
             metadata( :CNMN => @data[box_cursor+8..box_cursor+box_size-1].gsub("\x00", '').strip )
           when 'CNCV'
