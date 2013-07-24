@@ -28,7 +28,7 @@ module FilesHunterTest
         if ((!IGNORE_EXTENSIONS.include?(File.extname(file_name)[1..-1].downcase.to_sym)) and
             (!IGNORE_FILES.include?(File.basename(file_name))))
 
-          # Insert garbage before
+          # Truncate file
           define_method "test_truncated_file_#{file_name.gsub(FILES_ROOT_PATH,'')}" do
             prepare_temp_file(file_name) do |temp_file_name|
               # Insert bytes of garbage before and duplicate

@@ -104,11 +104,11 @@ module FilesHunter
             'RIFF', # includes AVI, WAV, ANI
             'FLAC',
             'BMP',
-            'ICO', # includes ICO, CUR
+            'MP3',
             'Text', # includes TXT, LOG, SRT, RTF, HTML, XML (both ASCII-8BIT and UTF-16)
             'JPEG', # includes JPG, THM
             'TIFF',
-            'MP3'
+            'ICO' # includes ICO, CUR
           ].each do |decoder_name|
             @plugins.access_plugin(:Decoders, decoder_name) do |decoder|
               log_debug "[#{file_name}] - Try #{decoder_name}"

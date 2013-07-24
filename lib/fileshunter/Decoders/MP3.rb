@@ -34,6 +34,8 @@ module FilesHunter
 
       MIN_ACCEPTABLE_TIME_MS = 1000
 
+      MAX_ID3V2_FRAME_SIZE = 256
+
       APE_ITEM_KEY_TERMINATOR = "\x00".force_encoding(Encoding::ASCII_8BIT)
 
       ID3V2_PADDING_CHAR = "\x00".force_encoding(Encoding::ASCII_8BIT)
@@ -129,12 +131,12 @@ module FilesHunter
               frame_flags = BinData::Uint16be.read(@data[cursor+8..cursor+9])
               invalid_data("@#{cursor} - Invalid ID3v2 frame flags: #{frame_flags}.") if ((frame_flags & 0b00011111_00011111) != 0)
               cursor += 10
-              id3v2_metadata[frame_id] = @data[cursor..cursor+frame_size-1]
+              id3v2_metadata[frame_id] = @data[cursor..cursor+((frame_size > MAX_ID3V2_FRAME_SIZE) ? MAX_ID3V2_FRAME_SIZE : frame_size)-1]
               cursor += frame_size
             end
             metadata( :id3v2_metadata => id3v2_metadata )
             # Get directly to the previously computed cursor to skip padding
-            invalid_data("@#{cursor} - Padding size (#{padding_size}) is different from what is being read (#{cursor_end-cursor}).") if (padding_size != cursor_end-cursor)
+            log_debug("@#{cursor} - Padding size (#{padding_size}) is different from what is being read (#{cursor_end-cursor}).") if (padding_size != cursor_end-cursor)
             cursor = cursor_end
           elsif (@data[cursor..cursor+7] == BEGIN_PATTERN_APEV2)
             log_debug "=== @#{cursor} - Found APEv2 tag"

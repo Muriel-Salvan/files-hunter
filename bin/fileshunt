@@ -34,7 +34,7 @@ module FilesHunter
         @extract_dir = arg
       end
       @options.on( '--blocksize <BlockSizeInBytes>', Integer,
-        '<BlockSizeInBytes>: Size of blocks to read at once from disk. Default = 134217728.',
+        "<BlockSizeInBytes>: Size of blocks to read at once from disk. Default = #{@block_size}.",
         'Specify the block size when reading from files') do |arg|
         @block_size = arg
       end
@@ -180,7 +180,7 @@ module FilesHunter
     # * *segment* (_Segment_): Segment to be written
     # * *file_name* (_String_): File name containing the original data
     def write_segment(data, index, segment, file_name)
-      file_name_suffix = ".__EXTRACT__.#{sprintf('%.4d', index)}.#{segment.truncated ? 'truncated.' : ''}#{segment.missing_previous_data ? 'missing_previous_data.' : ''}#{segment.extension.to_s}"
+      file_name_suffix = ".__EXTRACT__.#{sprintf('%.4d', index)}.#{segment.truncated ? 'truncated.' : ''}#{segment.missing_previous_data ? 'missing_previous_data.' : ''}#{segment.extensions[0].to_s}"
       extracted_file_name = nil
       if (@extract_dir == nil)
         extracted_file_name = "#{file_name}#{file_name_suffix}"

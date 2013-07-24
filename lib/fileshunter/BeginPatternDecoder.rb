@@ -90,7 +90,7 @@ module FilesHunter
     # Parameters::
     # * *properties* (<em>map<Symbol,Object></em>): The properties to be set
     def metadata(properties)
-      log_debug "Add metadata: #{properties.inspect}"
+      #log_debug "Add metadata: #{properties.inspect}"
       @metadata.merge!(properties)
     end
 
