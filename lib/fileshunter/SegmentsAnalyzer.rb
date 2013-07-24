@@ -89,8 +89,10 @@ module FilesHunter
         segments << Segment.new(0, @nbr_bytes, :unknown, false, false, {})
 
         begin
-          # Get decoders in a given order
-          # This is important as some containers can include segments of other containers
+          # Get decoders in a given order.
+          # This is important as some containers can include segments of other containers.
+          # A given format MUST NOT be able to include a format specified BEFORE him in the list.
+          # A given format CAN be able to include a format specified AFTER him in the list.
           [
             'CFBF', # includes Thumbs.db, DOC, XLS, PPT, MSI
             'ASF', # includes WMV
