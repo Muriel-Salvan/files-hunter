@@ -4,6 +4,8 @@ module FilesHunter
 
   module Decoders
 
+    # WAV files can contain MP3 files
+
     class RIFF < BeginPatternDecoder
 
       # Reference: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/RIFF.html
@@ -298,6 +300,7 @@ module FilesHunter
                      (AVI_STREAM_TYPES.include?(stream_type)))
                 # Read size
                 stream_size = @bindata_32.read(@data[cursor+4..cursor+7])
+                stream_size += 1 if stream_size.odd?
                 log_debug "@#{cursor} - Found AVI stream #{stream_id}#{stream_type} of size #{stream_size}"
                 cursor += 8 + stream_size
                 stream_id = @data[cursor..cursor+1]
