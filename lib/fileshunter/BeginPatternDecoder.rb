@@ -8,12 +8,25 @@ module FilesHunter
   # They can then use the following DSL in the decode method:
   # * *found_relevant_data*: Indicate that we are certain the beginning of data of the given extension has been found
   # * *invalid_data*: Indicate the data read is invalid for our Decoder
-  # * *truncated_data*: Indicate the data should have continued beyond @end_offset if it were to be complete
+  # * *truncated_data*: Indicate the data should have continued if it were to be complete. This can happen even in the middle of a stream, if the data has been corrupted.
   # * *progress*: Indicate the progression of the scan: everything before the progression is considered valid for the given extension (if found_relevant_data was called previously)
   # * *metadata*: Set metadata properties
   class BeginPatternDecoder < Decoder
 
     class TruncatedDataError < RuntimeError
+
+      attr_reader :cursor_truncated
+
+      # Constructor
+      #
+      # Parameters::
+      # * *message* (_String_): The error message
+      # * *cursor_truncated* (_Fixnum_): The exceeding offset
+      def initialize(message, cursor_truncated)
+        super(message)
+        @cursor_truncated = cursor_truncated
+      end
+
     end
 
     class InvalidDataError < RuntimeError
@@ -66,8 +79,9 @@ module FilesHunter
     #
     # Parameters::
     # * *message* (_String_): Message to give with the exception [default = '']
-    def truncated_data(message = '')
-      raise TruncatedDataError.new(message)
+    # * *cursor_truncated* (_Fixnum_): Cursor where data has been truncated [default = nil]
+    def truncated_data(message = '', cursor_truncated = nil)
+      raise TruncatedDataError.new(message, ((cursor_truncated == nil) ? ((@last_offset_to_be_decoded == nil) ? @end_offset : @last_offset_to_be_decoded) : cursor_truncated))
     end
 
     # Indicate that the data is missing previous data.
@@ -81,7 +95,7 @@ module FilesHunter
     # * *offset_to_be_decoded* (_Fixnum_): Next to be decoded
     def progress(offset_to_be_decoded)
       @last_offset_to_be_decoded = offset_to_be_decoded
-      raise TruncatedDataError.new("Progression @#{offset_to_be_decoded} is over limit (#{@end_offset})") if (@last_offset_to_be_decoded > @end_offset)
+      raise TruncatedDataError.new("Progression @#{offset_to_be_decoded} is over limit (#{@end_offset})", @end_offset) if (@last_offset_to_be_decoded > @end_offset)
       keep_alive
     end
 
@@ -162,7 +176,11 @@ module FilesHunter
               # If we already got relevant data, mark it as truncated
               if (@extension != nil)
                 truncated = true
-                decoded_end_offset = @end_offset
+                if ($!.is_a?(AccessAfterDataError))
+                  decoded_end_offset = $!.exceeding_offset
+                else
+                  decoded_end_offset = $!.cursor_truncated
+                end
               else
                 decoded_end_offset = nil
               end

@@ -23,7 +23,7 @@ void load_next_block(
   int* ptr_last_data_block) {
   // Check that there is data to read
   if (*ptr_last_data_block) {
-    rb_funcall(rb_self, rb_intern("truncated_data"), 1, rb_str_new2("Unable to get next unary encoded value"));
+    rb_funcall(rb_self, rb_intern("truncated_data"), 2, rb_str_new2("Unable to get next block to read"), rb_ivar_get(rb_self, rb_intern("@end_offset")));
   }
   // Load the block in memory and get it
   VALUE rb_result = rb_funcall(rb_data, rb_intern("get_block_containing_offset"), 1, INT2FIX(offset));

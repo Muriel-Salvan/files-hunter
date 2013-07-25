@@ -498,9 +498,9 @@ module FilesHunter
         metadata(
           :nbr_boxes => nbr_boxes
         )
-        truncated_data("@#{ending_offset} - Missing mdat box.") if (!found_mdat)
+        truncated_data("@#{ending_offset} - Missing mdat box.", ending_offset) if (!found_mdat)
         # TODO: Find a way to detect the end of a stream (usually size 0 applies to mdat boxes)
-        invalid_data('Cannot decode MP4 to the end of file') if (ending_offset == nil)
+        invalid_data('Cannot decode MP4 to the end of file',) if (ending_offset == nil)
 
         return ending_offset
       end
@@ -580,7 +580,12 @@ module FilesHunter
             log_debug "=== @#{cursor} - Real size is #{size}"
             cursor += 8
           end
-          truncated_data("@#{cursor} - Box #{box_hierarchy.join('/')} with size #{size} should finish at cursor #{box_cursor + size}, but container box set maximal cursor to #{container_box_max_cursor}.") if (box_cursor + size > container_box_max_cursor)
+          if (max_cursor == nil)
+            # For root elements, this error is synonym of truncated data as container_box_max_cursor is set arbitrarily to @end_offset
+            truncated_data("@#{cursor} - Box #{box_hierarchy.join('/')} with size #{size} should finish at cursor #{box_cursor + size}, but container box set maximal cursor to #{container_box_max_cursor}.", container_box_max_cursor) if (box_cursor + size > container_box_max_cursor)
+          else
+            invalid_data("@#{cursor} - Box #{box_hierarchy.join('/')} with size #{size} should finish at cursor #{box_cursor + size}, but container box set maximal cursor to #{container_box_max_cursor}.") if (box_cursor + size > container_box_max_cursor)
+          end
           yield(box_hierarchy, box_cursor, size)
           if (size == 0)
             # Last box, to the end.

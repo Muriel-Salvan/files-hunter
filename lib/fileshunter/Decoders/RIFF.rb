@@ -370,7 +370,12 @@ module FilesHunter
           end
           # If there is a size, read it
           # Consider that if we ignore unknown elements they all HAVE a size
-          size = ((ignore_unknown_elements or (RIFF_ELEMENTS_WITH_SIZE.include?(name))) ? @bindata_32.read(@data[cursor+4..cursor+7]) : nil)
+          size = nil
+          if (ignore_unknown_elements or
+              (RIFF_ELEMENTS_WITH_SIZE.include?(name)))
+            size = @bindata_32.read(@data[cursor+4..cursor+7])
+            size += 1 if size.odd?
+          end
           # This element is valid
           nbr_elements += 1
           nbr_direct_subelements += 1
@@ -386,7 +391,12 @@ module FilesHunter
             break
           end
           invalid_data("@#{cursor} - Element parsing exceeded its element's size (#{element_cursor_end} > #{element_cursor + size})") if ((size != nil) and (element_cursor_end > element_cursor + size))
-          invalid_data("@#{cursor} - Element parsing exceeded its container limit (#{element_cursor_end} > #{container_element_max_cursor})") if (element_cursor_end > container_element_max_cursor)
+          if (max_cursor == nil)
+            # For root elements, this error is synonym of truncated data as container_element_max_cursor is set arbitrarily to @end_offset
+            truncated_data("@#{cursor} - Element parsing exceeded its container limit (#{element_cursor_end} > #{container_element_max_cursor})", container_element_max_cursor) if (element_cursor_end > container_element_max_cursor)
+          else
+            invalid_data("@#{cursor} - Element parsing exceeded its container limit (#{element_cursor_end} > #{container_element_max_cursor})") if (element_cursor_end > container_element_max_cursor)
+          end
           cursor = element_cursor_end
           if ((complete_element_names[name] != nil) and
               (cursor < container_element_max_cursor))
@@ -398,7 +408,7 @@ module FilesHunter
             # Check cursor is at the correct position
             invalid_data("@#{cursor} - Element parsing should have stopped at #{element_cursor + size} but is instead at #{cursor}") if ((size != nil) and (cursor != element_cursor + size))
           end
-          truncated_data("@#{cursor} - Element #{element_hierarchy.join('/')} with size #{size} finishes at cursor #{element_cursor + size}, but container element set maximal cursor to #{container_element_max_cursor}.") if ((size != nil) and (element_cursor + size > container_element_max_cursor))
+          invalid_data("@#{cursor} - Element #{element_hierarchy.join('/')} with size #{size} finishes at cursor #{element_cursor + size}, but container element set maximal cursor to #{container_element_max_cursor}.") if ((size != nil) and (element_cursor + size > container_element_max_cursor))
           cursor = element_cursor + size if (size != nil)
           progress(cursor)
         end

@@ -2,6 +2,9 @@ module FilesHunter
 
   module Decoders
 
+    # JPEG decoder has to be among the last ones to be decoded, as a truncated JPEG followed by other files can consume all files in its truncated data.
+    # JPEG files can contain TIFF files
+
     class JPEG < BeginPatternDecoder
 
       MARKER_PREFIX = "\xFF".force_encoding(Encoding::ASCII_8BIT)
@@ -222,8 +225,8 @@ module FilesHunter
               found_relevant_data([:jpg, :thm])
               # Find the next marker that is FF xx, with xx being different than 00, D0..D7 and FF
               cursor = @data.index(MARKERS_IGNORED_IN_ENTROPY_DATA_REGEXP, cursor + 2 + size, 2)
-              log_debug "=== Entropy data gets to cursor #{cursor}"
-              truncated_data("@#{cursor} - Truncated entropy data segment") if (cursor == nil)
+              log_debug "=== Entropy data gets to cursor #{cursor.inspect}"
+              truncated_data("@#{cursor} - Truncated entropy data segment", @end_offset) if (cursor == nil)
             else
               # No entropy data: just get to the next segment
               cursor += 2 + size

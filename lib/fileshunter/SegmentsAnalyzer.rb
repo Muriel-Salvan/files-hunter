@@ -19,11 +19,11 @@ module IOBlockReader
     alias_method :old_squares, :[]
     def [](range)
       if (range.is_a?(Range))
-        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range} (>= #{@end_offset})") if (range.last >= @end_offset)
+        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range} (>= #{@end_offset})", @end_offset) if (range.last >= @end_offset)
         raise FilesHunter::AccessBeforeDataError.new("Index out of range: #{range} (< #{@begin_offset})") if (range.first < @begin_offset)
         result = self.old_squares(range)
       else
-        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range} (>= #{@end_offset})") if (range >= @end_offset)
+        raise FilesHunter::AccessAfterDataError.new("Index out of range: #{range} (>= #{@end_offset})", @end_offset) if (range >= @end_offset)
         raise FilesHunter::AccessBeforeDataError.new("Index out of range: #{range} (< #{@begin_offset})") if (range < @begin_offset)
         result = self.old_squares(range)
       end
@@ -40,6 +40,19 @@ module FilesHunter
   end
 
   class AccessAfterDataError < AccessDataError
+
+    attr_reader :exceeding_offset
+
+    # Constructor
+    #
+    # Parameters::
+    # * *message* (_String_): The error message
+    # * *exceeding_offset* (_Fixnum_): The exceeding offset
+    def initialize(message, exceeding_offset)
+      super(message)
+      @exceeding_offset = exceeding_offset
+    end
+
   end
 
   class AccessBeforeDataError < AccessDataError

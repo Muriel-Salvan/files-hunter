@@ -2,6 +2,8 @@ module FilesHunter
 
   module Decoders
 
+    # MP3 files can contain JPEG files
+
     class MP3 < BeginPatternDecoder
 
       BEGIN_PATTERN_ID3V1 = 'TAG'.force_encoding(Encoding::ASCII_8BIT)
@@ -40,6 +42,8 @@ module FilesHunter
 
       ID3V2_PADDING_CHAR = "\x00".force_encoding(Encoding::ASCII_8BIT)
 
+      TRAILING_00_REGEXP = Regexp.new("\x00*$".force_encoding(Encoding::ASCII_8BIT), nil, 'n')
+
       def get_begin_pattern
         return BEGIN_PATTERN_MP3, { :max_regexp_size => 8 }
       end
@@ -69,24 +73,24 @@ module FilesHunter
             if (@data[cursor..cursor+3] == BEGIN_PATTERN_ID3V1E)
               log_debug "=== @#{cursor} - Found ID3v1 extended tag"
               metadata( :id3v1e_metadata => {
-                :title => @data[cursor+4..cursor+63],
-                :artist => @data[cursor+64..cursor+123],
-                :album => @data[cursor+124..cursor+183],
+                :title => read_ascii(cursor+4, cursor+63),
+                :artist => read_ascii(cursor+64, cursor+123),
+                :album => read_ascii(cursor+124, cursor+183),
                 :speed => @data[cursor+184].ord,
-                :genre => @data[cursor+185..cursor+214],
-                :start_time => @data[cursor+215..cursor+220],
-                :end_time => @data[cursor+221..cursor+226]
+                :genre => read_ascii(cursor+185, cursor+214),
+                :start_time => read_ascii(cursor+215, cursor+220),
+                :end_time => read_ascii(cursor+221, cursor+226)
               } )
               cursor += 227
             else
               # Just met an ID3v1 tag: skip 128 bytes
               log_debug "=== @#{cursor} - Found ID3v1 tag"
               metadata( :id3v1_metadata => {
-                :title => @data[cursor+3..cursor+32],
-                :artist => @data[cursor+33..cursor+62],
-                :album => @data[cursor+63..cursor+92],
-                :year => @data[cursor+93..cursor+96],
-                :comments => @data[cursor+97..cursor+126],
+                :title => read_ascii(cursor+3, cursor+32),
+                :artist => read_ascii(cursor+33, cursor+62),
+                :album => read_ascii(cursor+63, cursor+92),
+                :year => read_ascii(cursor+93, cursor+96),
+                :comments => read_ascii(cursor+97, cursor+126),
                 :genre => @data[cursor+127].ord
               } )
               cursor += 128
@@ -131,7 +135,7 @@ module FilesHunter
               frame_flags = BinData::Uint16be.read(@data[cursor+8..cursor+9])
               invalid_data("@#{cursor} - Invalid ID3v2 frame flags: #{frame_flags}.") if ((frame_flags & 0b00011111_00011111) != 0)
               cursor += 10
-              id3v2_metadata[frame_id] = @data[cursor..cursor+((frame_size > MAX_ID3V2_FRAME_SIZE) ? MAX_ID3V2_FRAME_SIZE : frame_size)-1]
+              id3v2_metadata[frame_id] = read_ascii(cursor, cursor+((frame_size > MAX_ID3V2_FRAME_SIZE) ? MAX_ID3V2_FRAME_SIZE : frame_size)-1)
               cursor += frame_size
             end
             metadata( :id3v2_metadata => id3v2_metadata )
@@ -317,6 +321,17 @@ module FilesHunter
         item_value = @data[cursor..cursor+value_size-1]
         cursor += value_size
         return item_key, item_value, cursor
+      end
+
+      # Read an ASCII value
+      #
+      # Parameters::
+      # * *cursor_begin* (_Fixnum_): The cursor to read from
+      # * *cursor_end* (_Fixnum_): The end of the cursor
+      # Result::
+      # * _String_ or <em>list<String></em>: Resulting string or list of strings if several.
+      def read_ascii(cursor_begin, cursor_end)
+        return @data[cursor_begin..cursor_end].gsub(TRAILING_00_REGEXP, '').strip
       end
 
     end
