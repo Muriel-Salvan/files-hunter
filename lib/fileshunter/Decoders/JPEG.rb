@@ -78,6 +78,7 @@ module FilesHunter
             case c_1
             when MARKER_APP0
               # Application specific data
+              log_debug "@#{cursor} - Found APP0 marker"
               # Usually used for JFIF
               case @data[cursor+4..cursor+8]
               when JFIF_HEADER
@@ -113,6 +114,7 @@ module FilesHunter
               end
             when MARKER_APP1
               # Application specific data
+              log_debug "@#{cursor} - Found APP1 marker"
               # Usually used for Exif
               case @data[cursor+4..cursor+9]
               when EXIF_HEADER
@@ -139,6 +141,7 @@ module FilesHunter
               end
             when MARKER_SOF0..MARKER_SOF3
               # SOF: Start of Frame
+              log_debug "@#{cursor} - Found SOF marker"
               invalid_data("@#{cursor} - Found several SOF markers") if found_sof
               invalid_data("@#{cursor} - Found a SOF marker after the SOS marker") if found_sos
               found_sof = true
@@ -164,6 +167,7 @@ module FilesHunter
               end
             when MARKER_DHT
               # DHT: Define Huffman tables
+              log_debug "@#{cursor} - Found DHT marker"
               end_cursor = cursor + 2 + size
               dht_cursor = cursor + 4
               while (dht_cursor < end_cursor)
@@ -172,12 +176,12 @@ module FilesHunter
                 invalid_data("@#{cursor} - Unknown Huffman table type: #{huffman_type}") if (huffman_type > 1)
                 if (huffman_type == 0)
                   huffman_dc_table_id = (header_byte & 0b00001111)
-                  invalid_data("@#{cursor} - Huffman DC table id #{huffman_dc_table_id} already defined.") if (huffman_dc_tables_id.include?(huffman_dc_table_id))
+                  #invalid_data("@#{cursor} - Huffman DC table id #{huffman_dc_table_id} already defined.") if (huffman_dc_tables_id.include?(huffman_dc_table_id))
                   huffman_dc_tables_id << huffman_dc_table_id
                   log_debug "@#{cursor} - Found Huffman DC table: #{huffman_dc_table_id}"
                 else
                   huffman_ac_table_id = (header_byte & 0b00001111)
-                  invalid_data("@#{cursor} - Huffman AC table id #{huffman_ac_table_id} already defined.") if (huffman_ac_tables_id.include?(huffman_ac_table_id))
+                  #invalid_data("@#{cursor} - Huffman AC table id #{huffman_ac_table_id} already defined.") if (huffman_ac_tables_id.include?(huffman_ac_table_id))
                   huffman_ac_tables_id << huffman_ac_table_id
                   log_debug "@#{cursor} - Found Huffman AC table: #{huffman_ac_table_id}"
                 end
@@ -190,8 +194,9 @@ module FilesHunter
               end
             when MARKER_SOS
               # SOS: Start of Scan
-              invalid_data("@#{cursor} - SOS marker begins whereas no Huffman DC table has been defined.") if (huffman_dc_tables_id.empty?)
-              invalid_data("@#{cursor} - SOS marker begins whereas no Huffman AC table has been defined.") if (huffman_ac_tables_id.empty?)
+              log_debug "@#{cursor} - Found SOS marker"
+              #invalid_data("@#{cursor} - SOS marker begins whereas no Huffman DC table has been defined.") if (huffman_dc_tables_id.empty?)
+              #invalid_data("@#{cursor} - SOS marker begins whereas no Huffman AC table has been defined.") if (huffman_ac_tables_id.empty?)
               invalid_data("@#{cursor} - SOS marker begins whereas no quantisation table has been defined.") if (quantisation_tables_id.empty?)
               invalid_data("@#{cursor} - SOS marker begins whereas no SOF marker has been encountered.") if (!found_sof)
               found_sos = true
@@ -201,11 +206,12 @@ module FilesHunter
                 huffman_table_ids = @data[cursor+6+2*idx_component].ord
                 huffman_dc_table_id = ((huffman_table_ids & 0b11110000) >> 4)
                 huffman_ac_table_id = (huffman_table_ids & 0b00001111)
-                invalid_data("@#{cursor} - Unknown DC Huffman table: #{huffman_dc_table_id}") if (!huffman_dc_tables_id.include?(huffman_dc_table_id))
-                invalid_data("@#{cursor} - Unknown AC Huffman table: #{huffman_ac_table_id}") if (!huffman_ac_tables_id.include?(huffman_ac_table_id))
+                #invalid_data("@#{cursor} - Unknown DC Huffman table: #{huffman_dc_table_id}") if (!huffman_dc_tables_id.include?(huffman_dc_table_id))
+                #invalid_data("@#{cursor} - Unknown AC Huffman table: #{huffman_ac_table_id}") if (!huffman_ac_tables_id.include?(huffman_ac_table_id))
               end
             when MARKER_DQT
               # DQT: Define quantisation tables
+              log_debug "@#{cursor} - Found DQT marker"
               end_cursor = cursor + 2 + size
               dqt_cursor = cursor + 4
               while (dqt_cursor < end_cursor)
@@ -218,6 +224,8 @@ module FilesHunter
                 dqt_cursor += 1 + 64*((precision == 0) ? 1 : 2)
                 invalid_data("@#{dqt_cursor} - End of quantisation table was supposed to be @#{end_cursor}.") if (dqt_cursor > end_cursor)
               end
+            else
+              log_debug "@#{cursor} - Found ignored marker: #{c_1.inspect}"
             end
             # Does it have entropy data?
             if (c_1 == MARKER_WITH_ENTROPY_DATA)

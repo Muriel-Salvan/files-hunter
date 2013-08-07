@@ -1,4 +1,6 @@
 require 'test/unit'
+require 'rUtilAnts/Logging'
+RUtilAnts::Logging::install_logger_on_object
 
 activate_debug = ARGV.delete('--debug')
 

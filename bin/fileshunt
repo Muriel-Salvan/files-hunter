@@ -3,6 +3,8 @@
 require 'optparse'
 require 'fileshunter'
 require 'fileutils'
+require 'rUtilAnts/Logging'
+RUtilAnts::Logging::install_logger_on_object
 
 module FilesHunter
 
@@ -96,8 +98,8 @@ module FilesHunter
             end
           end
         end
-        # Remove already extracted files from the list
-        files.select! { |file_name| ((file_name =~ /\.__EXTRACT__\./) == nil) }
+        # Remove already extracted files from the list, and directories
+        files.select! { |file_name| (!File.directory?(file_name)) and ((file_name =~ /\.__EXTRACT__\./) == nil) }
 
         # Analyze them
         analyze_files(files)
